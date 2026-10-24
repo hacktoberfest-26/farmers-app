@@ -53,7 +53,8 @@ export function CampusMap({client,locale}:{client:CampusClient;locale:Locale}){
    {gpsStatus&&<p role="status" className="cp-fine">{gpsStatus}</p>}
    {fix&&<div className="cp-map-person"><strong>{fix.simulated?(it?'Passeggiata simulata':'Simulated walk'):'GPS'} · ±{Math.round(fix.accuracy)} m</strong><button className="cp-text-button" onClick={()=>command('stop')}>{it?'Interrompi posizione':'Stop location'}</button></div>}
    {client.mode==='demo'?<p>{it?'Per condividere tra dispositivi usa la demo condivisa.':'Use the shared demo to share positions across devices.'}</p>:<button className={`cp-btn ${sharing?'cp-secondary':''}`} onClick={()=>sharing?void stop():setSharing(true)}>{sharing?(it?'Interrompi condivisione':'Stop sharing with matches'):(it?'Condividi con i miei match':'Share with my matches')}</button>}
-   <small role="status">{sharing?(it?'Condivisione attiva · solo con i tuoi match':'Sharing on · only with mutual matches'):(it?'Condivisione disattivata · GPS privato':'Sharing off · your GPS stays private')}</small>
+   <small role="status">{sharing?(it?'Condivisione attiva · match reciproci e operatore':'Sharing on · mutual matches and operator'):(it?'Condivisione disattivata · GPS privato':'Sharing off · your GPS stays private')}</small>
+   <small>{it?'Le posizioni condivise sono visibili ai match reciproci e all’operatore della piattaforma.':'Shared positions are visible to mutual matches and the deployment operator.'}</small>
    <small>{it?'Le posizioni scompaiono dopo 2 minuti senza aggiornamenti.':'Positions disappear after 2 minutes without updates.'}</small>
    {!sharing&&state.own&&<button className="cp-text-button" onClick={()=>void stop()}>{it?'Rimuovi posizione precedente':'Remove previous shared position'}</button>}
    {error&&<p role="alert" className="cp-error">{error}</p>}</div>

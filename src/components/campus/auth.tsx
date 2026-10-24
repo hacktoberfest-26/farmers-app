@@ -5,8 +5,8 @@ import type { CampusHome } from '@/lib/campus-model';
 import { sharedDemoAccounts } from '@/lib/campus-demo-accounts';
 import type { Translate } from './copy';
 
-export function CampusAuth({ client, auth, t, onSuccess, onDemo }: { client: CampusClient; auth: CampusHome['auth']; t: Translate; onSuccess: () => Promise<void>; onDemo: () => void }) {
-  const [tab, setTab] = useState<'shared' | 'student' | 'operator'>(auth.sharedDemo ? 'shared' : 'student');
+export function CampusAuth({ client, auth, t, onSuccess, onDemo, operatorOnly=false }: { client: CampusClient; auth: CampusHome['auth']; t: Translate; onSuccess: () => Promise<void>; onDemo: () => void; operatorOnly?:boolean }) {
+  const [tab, setTab] = useState<'shared' | 'student' | 'operator'>(operatorOnly ? 'operator' : auth.sharedDemo ? 'shared' : 'student');
   const [alias, setAlias] = useState('alex');
   const [passcode, setPasscode] = useState('');
   const [email, setEmail] = useState('');
@@ -16,7 +16,7 @@ export function CampusAuth({ client, auth, t, onSuccess, onDemo }: { client: Cam
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   return <div className="cp-auth">
-    <div className="cp-auth-tabs">{auth.sharedDemo && <button type="button" className={tab === 'shared' ? 'active' : ''} onClick={() => { setTab('shared'); setError(''); }}>{t('sharedDemo')}</button>}<button type="button" className={tab === 'student' ? 'active' : ''} onClick={() => { setTab('student'); setError(''); }}>{t('student')}</button><button type="button" className={tab === 'operator' ? 'active' : ''} onClick={() => { setTab('operator'); setError(''); }}>{t('operator')}</button></div>
+    {!operatorOnly&&<div className="cp-auth-tabs">{auth.sharedDemo && <button type="button" className={tab === 'shared' ? 'active' : ''} onClick={() => { setTab('shared'); setError(''); }}>{t('sharedDemo')}</button>}<button type="button" className={tab === 'student' ? 'active' : ''} onClick={() => { setTab('student'); setError(''); }}>{t('student')}</button><button type="button" className={tab === 'operator' ? 'active' : ''} onClick={() => { setTab('operator'); setError(''); }}>{t('operator')}</button></div>}
     {tab === 'shared' && <div className="cp-note"><ShieldCheck size={18}/><p>{t('sharedNotice')}</p></div>}
     {tab === 'student' && !auth.emailEnabled && <div className="cp-note"><Mail size={18}/><p>{t('authDisabled')}</p></div>}
     <form onSubmit={async event => { event.preventDefault(); setBusy(true); setError(''); try { if (tab === 'shared') { await client.signInSharedDemo(passcode, alias); setPasscode(''); await onSuccess(); } else if (tab === 'operator') { await client.signIn(email, password); await onSuccess(); } else if (challenge) { await client.verifyCode(challenge, code); await onSuccess(); } else { const receipt = await client.requestCode(email); setChallenge(receipt.challengeId); } } catch (cause) { setError(cause instanceof Error ? cause.message : t('unknownError')); } finally { setBusy(false); } }}>
@@ -27,8 +27,8 @@ export function CampusAuth({ client, auth, t, onSuccess, onDemo }: { client: Cam
       <button className="cp-btn cp-wide" disabled={busy || tab === 'student' && !auth.emailEnabled} type="submit">{t(tab === 'shared' ? 'enterSharedDemo' : tab === 'operator' ? 'signIn' : challenge ? 'verify' : 'sendCode')}<ArrowRight size={15}/></button>
     </form>
     {tab === 'operator' && <p className="cp-fine"><ShieldCheck size={13}/>{t('bootstrapNote')}</p>}
-    <div className="cp-divider"><span>Farmers</span></div>
+    {!operatorOnly&&<><div className="cp-divider"><span>Farmers</span></div>
     <button type="button" className="cp-btn cp-secondary cp-wide" onClick={onDemo}>{t('tryDemo')}<ArrowRight size={15}/></button>
-    <p className="cp-fine cp-center">{t('demoDetail')}</p>
+    <p className="cp-fine cp-center">{t('demoDetail')}</p></>}
   </div>;
 }

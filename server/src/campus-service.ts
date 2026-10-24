@@ -3,7 +3,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
 import { anonymousPair } from '../../packages/anonymiser';
 import {
-  locationFixSchema, sharedLocationSchema, type LocationFix, type CampusMapState, campusEventSchema, campusHomeSchema, campusMemberSchema, campusProfileSchema, goalId,
+  feedbackInputSchema, matchFeedbackSchema, campusMemberEligible, type FeedbackInput, locationFixSchema, sharedLocationSchema, type LocationFix, type CampusMapState, campusEventSchema, campusHomeSchema, campusMemberSchema, campusProfileSchema, goalId,
   initialCampusProfile, interestId, judgementSchema, skillId, sportId,
   type CampusEvent, type CampusHome, type CampusMember, type CampusProfileInput,
   type EngineReport, type MatchType, type MatchView,
@@ -22,8 +22,7 @@ const leaseRow = z.object({ owner: z.string().nullable(), lease_until: z.number(
 const vocabulary = { interests: interestId.options, skills: skillId.options, goals: goalId.options, sports: sportId.options };
 const dayFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' });
 const dayKey = (now: number) => dayFormatter.format(new Date(now));
-const eligible = (member: CampusMember) => member.complete && member.verification !== 'unverified'
-  && member.profile.consent.matching && member.profile.consent.hostedAi;
+const eligible = campusMemberEligible;
 const overlaps = <T>(a: T[], b: T[]) => a.some(value => b.includes(value));
 
 export class CampusError extends Error {
@@ -63,6 +62,13 @@ export class CampusService {
         proposal_id TEXT NOT NULL REFERENCES campus_proposals(id) ON DELETE CASCADE,
         user_id TEXT NOT NULL REFERENCES campus_members(user_id) ON DELETE CASCADE,
         answer TEXT NOT NULL CHECK(answer IN('yes','no')), PRIMARY KEY(proposal_id,user_id)
+      );
+      CREATE TABLE IF NOT EXISTS campus_match_feedback (
+        proposal_id TEXT NOT NULL REFERENCES campus_proposals(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES campus_members(user_id) ON DELETE CASCADE,
+        rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5), outcome TEXT NOT NULL CHECK(outcome IN ('met','planned','did-not-meet')),
+        comment TEXT NOT NULL CHECK(length(comment)<=1000), created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+        PRIMARY KEY(proposal_id,user_id)
       );
       CREATE TABLE IF NOT EXISTS campus_deliveries (
         user_id TEXT NOT NULL REFERENCES auth_users(id) ON DELETE CASCADE,
@@ -153,7 +159,7 @@ export class CampusService {
     const fields = { id: row.id, matchType: row.kind, avatar: { colour: partner.profile.colour, interests: partner.profile.interests },
       reasons: judgementSchema.shape.reasonCodes.parse(JSON.parse(row.reasons)), expiresAt: new Date(row.expires).toISOString() };
     if (answers.length === 2 && answers.every(answer => answer.answer === 'yes')) {
-      return { ...fields, kind: 'revealed', person: { name: partner.profile.name, course: partner.profile.course, year: partner.profile.year, email: partner.email } };
+      return { ...fields, kind: 'revealed', feedback:this.ownFeedback(actor.id,row.id), person: { name: partner.profile.name, course: partner.profile.course, year: partner.profile.year, email: partner.email } };
     }
     if (row.expires <= this.now()) return null;
     return { ...fields, kind: 'anonymous', myAnswer: answers.some(answer => answer.user_id === actor.id) ? 'yes' : 'pending' };
@@ -223,6 +229,27 @@ export class CampusService {
       if (this.projectProposal(proposal, member)?.kind === 'revealed') this.options.notify?.(proposalId, [proposal.a, proposal.b], 'match');
     });
     return this.home(id);
+  }
+
+  private ownFeedback(userId:string,proposalId:string) {
+    const row=this.db.prepare('SELECT rating,outcome,comment,created_at AS createdAt,updated_at AS updatedAt FROM campus_match_feedback WHERE proposal_id=? AND user_id=?').get(proposalId,userId);
+    return row?matchFeedbackSchema.parse(row):null;
+  }
+
+  feedback(userId:string,proposalId:string,input:FeedbackInput):CampusHome {
+    const data=feedbackInputSchema.parse(input);
+    this.transaction(()=>{
+      const member=this.requireMember(userId);
+      const raw=this.db.prepare('SELECT * FROM campus_proposals WHERE id=? AND (a=? OR b=?)').get(proposalId,userId,userId);
+      if(!raw)throw new CampusError(404,'Match unavailable');
+      // Feedback follows the current connection: revoked/declined/consent-withdrawn matches cannot be edited.
+      if(this.projectProposal(proposalRow.parse(raw),member)?.kind!=='revealed')throw new CampusError(409,'Feedback is available after both people accept the match');
+      const timestamp=new Date(this.now()).toISOString();
+      this.db.prepare(`INSERT INTO campus_match_feedback(proposal_id,user_id,rating,outcome,comment,created_at,updated_at) VALUES(?,?,?,?,?,?,?)
+        ON CONFLICT(proposal_id,user_id) DO UPDATE SET rating=excluded.rating,outcome=excluded.outcome,comment=excluded.comment,updated_at=excluded.updated_at`)
+        .run(proposalId,userId,data.rating,data.outcome,data.comment,timestamp,timestamp);
+    });
+    return this.home(userId);
   }
 
   private compatible(a: CampusMember, b: CampusMember): MatchType | null {

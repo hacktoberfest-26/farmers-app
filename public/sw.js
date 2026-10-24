@@ -1,4 +1,4 @@
-const CACHE = 'farmers-push-shell-v5';
+const CACHE = 'farmers-admin-feedback-v6';
 const ROOT = new URL('./', self.location.href).pathname;
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll([ROOT, `${ROOT}manifest.webmanifest`, `${ROOT}icons/icon-192.png`, `${ROOT}vendor/sql-wasm.wasm`, `${ROOT}vendor/sql-wasm-browser.wasm`])).then(() => self.skipWaiting()));
@@ -12,7 +12,7 @@ self.addEventListener('fetch', event => {
   if (url.pathname.includes('/api/') || url.pathname.endsWith('/sw.js')) return;
   const isAsset = url.pathname.includes('/_next/static/') || url.pathname.includes('/icons/') || url.pathname.includes('/vendor/');
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request).then(response => { if (response.ok) { const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(ROOT, copy)); } return response; }).catch(() => caches.match(ROOT).then(cached => cached || new Response('Farmers is offline. Reconnect to load this page.', {status:503,headers:{'Content-Type':'text/plain'}}))));
+    event.respondWith(fetch(event.request).then(response => { if (response.ok) { const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy)); } return response; }).catch(() => caches.match(event.request).then(cached => cached || caches.match(ROOT)).then(cached => cached || new Response('Farmers is offline. Reconnect to load this page.', {status:503,headers:{'Content-Type':'text/plain'}}))));
   } else if (isAsset) {
     event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => { if (response.ok) { const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy)); } return response; })));
   }

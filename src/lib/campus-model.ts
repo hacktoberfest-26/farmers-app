@@ -39,10 +39,15 @@ export const judgementSchema = z.object({ score: z.number().int().min(0).max(100
 export type MatchJudgement = z.infer<typeof judgementSchema>;
 export const matchType = z.enum(['cofounder','sport','lunch']);
 export type MatchType = z.infer<typeof matchType>;
+export const feedbackInputSchema = z.object({ rating:z.number().int().min(1).max(5), outcome:z.enum(['met','planned','did-not-meet']), comment:z.string().trim().max(1000).default('') });
+export const matchFeedbackSchema = feedbackInputSchema.extend({ createdAt:z.iso.datetime(), updatedAt:z.iso.datetime() });
+export type FeedbackInput = z.infer<typeof feedbackInputSchema>;
+export type MatchFeedback = z.infer<typeof matchFeedbackSchema>;
+export const campusMemberEligible = (member: CampusMember) => member.complete && member.verification !== 'unverified' && member.profile.consent.matching && member.profile.consent.hostedAi;
 const cardFields = { id: z.string(), matchType, avatar: avatarSchema, reasons: z.array(reasonCode).max(3), expiresAt: z.string() };
 export const matchViewSchema = z.discriminatedUnion('kind',[
   z.object({ ...cardFields, kind: z.literal('anonymous'), myAnswer: z.enum(['pending','yes']) }),
-  z.object({ ...cardFields, kind: z.literal('revealed'), person: z.object({ name: z.string(), course: z.string(), year: z.string(), email: z.email() }) }),
+  z.object({ ...cardFields, kind: z.literal('revealed'), feedback:matchFeedbackSchema.nullable().optional(), person: z.object({ name: z.string(), course: z.string(), year: z.string(), email: z.email() }) }),
 ]);
 export type MatchView = z.infer<typeof matchViewSchema>;
 export const campusEventSchema = z.object({ id:z.string(), title:z.string().min(2).max(160), date:z.iso.datetime(), place:z.string().max(160), topics:z.array(interestId).min(1).max(6), source:z.enum(['manual','poster','demo']) });

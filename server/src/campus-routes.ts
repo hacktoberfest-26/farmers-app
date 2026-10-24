@@ -1,10 +1,12 @@
 import { createHash, createHmac, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { locationFixSchema, campusProfileSchema } from '../../src/lib/campus-model';
+import { feedbackInputSchema, locationFixSchema, campusProfileSchema } from '../../src/lib/campus-model';
 import { CampusError, CampusService } from './campus-service';
 import type { CampusAI } from './backboard';
 import type { CommunityStore } from './store';
+import { CampusAdmin } from './campus-admin';
+import { adminQuerySchema,adminSectionSchema } from '../../src/lib/campus-admin-model';
 import { CampusPush, type PushTransport } from './push';
 import { pushEndpointSchema, pushSubscriptionSchema } from '../../src/lib/push-model';
 import { seedSharedDemo, sharedDemoAccount } from './campus-shared-demo';
@@ -52,6 +54,13 @@ export function registerCampusRoutes(app:FastifyInstance,store:CommunityStore,au
     if(request.headers.authorization&&!id)throw new CampusError(401,'Your session expired. Sign in again.');
     if(id)ensure(id);
     return campus.home(id);
+  }));
+  const admin=new CampusAdmin(db,campus,{pushConfigured:!!options.push,sharedDemo:!!options.sharedDemo});
+  app.addHook('onSend',async(request,reply,payload)=>{if(request.url.startsWith('/api/campus/admin/'))reply.header('Cache-Control','no-store');return payload;});
+  app.get('/api/campus/admin/overview',guarded(request=>admin.overview(actor(request),adminQuerySchema.parse(request.query).scope)));
+  app.get('/api/campus/admin/:section',guarded(request=>{
+    const {section}=z.object({section:adminSectionSchema}).parse(request.params);
+    return admin.list(actor(request),section,adminQuerySchema.parse(request.query));
   }));
   const pushToken=(request:FastifyRequest)=>{actor(request);return request.headers.authorization!.slice(7);};
   app.post('/api/campus/push/status',guarded(request=>{
@@ -110,6 +119,10 @@ export function registerCampusRoutes(app:FastifyInstance,store:CommunityStore,au
     const {id}=z.object({id:z.string().max(100)}).parse(request.params);
     const {answer}=z.object({answer:z.enum(['yes','no'])}).parse(request.body);
     return campus.answer(actor(request),id,answer);
+  }));
+  app.post('/api/campus/matches/:id/feedback',guarded(request=>{
+    const {id}=z.object({id:z.string().max(100)}).parse(request.params);
+    return campus.feedback(actor(request),id,feedbackInputSchema.parse(request.body));
   }));
   app.post('/api/campus/auth/request-code',{config:{rateLimit:{max:5,timeWindow:'1 minute'}}},guarded(async request=>{
     const {email:address}=emailInput.parse(request.body);

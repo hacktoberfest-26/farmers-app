@@ -38,7 +38,9 @@ export function CampusNotifications({ client, locale }: { client: LiveCampusClie
   };
   const enable = async () => {
     // Called directly from the tap so Safari retains user activation for its permission prompt.
-    const permission = await Notification.requestPermission();
+    setMessage(it ? 'Attendi la richiesta del browser. Se non compare, usa l’app installata o un browser esterno.' : 'Waiting for your browser’s permission prompt. If none appears, use the installed app or an external browser.');
+    let timer = 0;
+    const permission = await Promise.race([Notification.requestPermission(), new Promise<never>((_,reject) => { timer = window.setTimeout(() => reject(new Error(it ? 'Il browser non ha completato la richiesta. Apri Farmers dall’app installata o da un browser esterno.' : 'The browser did not complete the permission request. Open Farmers in the installed app or an external browser.')), 20000); })]).finally(() => window.clearTimeout(timer));
     if (permission !== 'granted') {
       setMessage(it ? 'Consenti le notifiche nelle impostazioni del dispositivo o del browser, poi riprova.' : 'Allow notifications in your device or browser settings, then try again.'); return;
     }

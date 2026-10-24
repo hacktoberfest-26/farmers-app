@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { campusMemberSchema, campusProfileSchema, colours, initialCampusProfile, interests, type CampusHome, type CampusMember, type CampusProfileInput, type EngineReport, type MatchType, type MatchView } from './campus-model';
+import { matchFeedbackSchema, feedbackInputSchema, type FeedbackInput, campusMemberSchema, campusProfileSchema, colours, initialCampusProfile, interests, type CampusHome, type CampusMember, type CampusProfileInput, type EngineReport, type MatchType, type MatchView } from './campus-model';
 import type { CampusClient } from './campus-client';
 
-const demoProposalSchema = z.object({ id: z.string(), a: z.string(), b: z.string(), kind: z.enum(['cofounder', 'sport', 'lunch']), answerA: z.enum(['pending', 'yes', 'no']), answerB: z.enum(['pending', 'yes', 'no']), createdAt: z.string(), expiresAt: z.string(), revoked: z.boolean().default(false) });
+const demoProposalSchema = z.object({ feedbackA:matchFeedbackSchema.optional(),feedbackB:matchFeedbackSchema.optional(), id: z.string(), a: z.string(), b: z.string(), kind: z.enum(['cofounder', 'sport', 'lunch']), answerA: z.enum(['pending', 'yes', 'no']), answerB: z.enum(['pending', 'yes', 'no']), createdAt: z.string(), expiresAt: z.string(), revoked: z.boolean().default(false) });
 const demoStateSchema = z.object({ version: z.literal(1), viewerId: z.string(), members: z.array(campusMemberSchema), proposals: z.array(demoProposalSchema), lastRun: z.string().nullable() });
 type DemoState = z.infer<typeof demoStateSchema>;
 const storageKey = 'farmers-campus-fictional-demo-v1';
@@ -35,7 +35,7 @@ export class DemoCampusClient implements CampusClient {
       if (!other || !me.profile.consent.matching || !other.profile.consent.matching) continue;
       const fields = { id: proposal.id, matchType: proposal.kind, avatar: { colour: other.profile.colour, interests: other.profile.interests }, reasons: proposal.kind === 'sport' ? ['same_sport', 'shared_availability'] satisfies MatchView['reasons'] : ['shared_interests', 'shared_goal'] satisfies MatchView['reasons'], expiresAt: proposal.expiresAt };
       suggestions.push(proposal.answerA === 'yes' && proposal.answerB === 'yes'
-        ? { ...fields, kind: 'revealed', person: { name: other.profile.name, course: other.profile.course, year: other.profile.year, email: other.email } }
+        ? { ...fields, kind: 'revealed', feedback:proposal.a===me.id?proposal.feedbackA??null:proposal.feedbackB??null, person: { name: other.profile.name, course: other.profile.course, year: other.profile.year, email: other.email } }
         : { ...fields, kind: 'anonymous', myAnswer: proposal.a === me.id ? proposal.answerA : proposal.answerB });
     }
     return { me: structuredClone(me), suggestions, events: me.profile.consent.events ? [{ id: 'fictional-event', title: 'Ideas over coffee', date: new Date(Date.now() + 86400000 * 2).toISOString(), place: 'Campus café · fictional example', topics: ['business', 'community'], source: 'demo' }] : [], alerts: me.role === 'staff' ? [{ id: 'fictional-guest', title: 'A climate-tech guest is visiting', body: 'Fictional example: two startup teams share this guest’s interests. A staff member could offer an introduction with consent.', status: 'open' }] : [], agent: { configured: false, model: 'Local rules demonstration · no AI', status: 'not-configured', lastRun: this.state.lastRun }, auth: { emailEnabled: false, domains: [], sharedDemo: false }, demo: true };
@@ -48,6 +48,14 @@ export class DemoCampusClient implements CampusClient {
     if (previous !== 'pending' && previous !== answer) throw new Error('Your answer has already been saved.');
     if (proposal.a === me.id) proposal.answerA = answer; else proposal.answerB = answer;
     this.save(); return this.home();
+  }
+  async feedback(id:string,input:FeedbackInput):Promise<CampusHome> {
+    const me=this.me();const proposal=this.state.proposals.find(p=>p.id===id && (p.a===me.id||p.b===me.id));
+    if(!proposal||proposal.revoked||proposal.answerA!=='yes'||proposal.answerB!=='yes')throw new Error('Feedback is available after both people accept the match');
+    const previous=proposal.a===me.id?proposal.feedbackA:proposal.feedbackB;
+    const now=new Date().toISOString();const feedback={...feedbackInputSchema.parse(input),createdAt:previous?.createdAt??now,updatedAt:now};
+    if(proposal.a===me.id)proposal.feedbackA=feedback;else proposal.feedbackB=feedback;
+    this.save();return this.home();
   }
   async runEngine(): Promise<EngineReport> {
     const me = this.me(); const now = new Date().toISOString(); const day = dayKey(now); let scanned = 0; let published = 0;

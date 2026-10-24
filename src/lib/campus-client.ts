@@ -1,6 +1,7 @@
+import { adminOverviewSchema,adminListSchema,type AdminScope,type AdminSection,type AdminQuery } from './campus-admin-model';
 import { pushStatusSchema, type DeviceSubscription } from './push-model';
 import { z } from 'zod';
-import { campusMapSchema, type LocationFix, type CampusMapState, campusHomeSchema, campusProfileSchema, campusSessionSchema, engineReportSchema, interestId, type CampusHome, type CampusProfileInput, type EngineReport } from './campus-model';
+import { type FeedbackInput, campusMapSchema, type LocationFix, type CampusMapState, campusHomeSchema, campusProfileSchema, campusSessionSchema, engineReportSchema, interestId, type CampusHome, type CampusProfileInput, type EngineReport } from './campus-model';
 import { sharedDemoAccounts } from './campus-demo-accounts';
 
 export type DemoAccount = { id: string; name: string };
@@ -11,6 +12,7 @@ export interface CampusClient {
   shareLocation(fix:LocationFix|null):Promise<CampusMapState>;
   saveProfile(profile: CampusProfileInput): Promise<CampusHome>;
   answer(id: string, answer: 'yes' | 'no'): Promise<CampusHome>;
+  feedback(id:string,input:FeedbackInput):Promise<CampusHome>;
   requestCode(email: string): Promise<{ challengeId: string; expiresAt: string }>;
   verifyCode(challengeId: string, code: string): Promise<void>;
   signIn(email: string, password: string): Promise<void>;
@@ -51,6 +53,8 @@ export class LiveCampusClient implements CampusClient {
     }
     return result;
   }
+  async adminOverview(scope:AdminScope) { return adminOverviewSchema.parse(await this.request(`/api/campus/admin/overview?scope=${scope}`)); }
+  async adminList(section:AdminSection,query:AdminQuery) { const params=new URLSearchParams(Object.entries(query).map(([key,value])=>[key,String(value)]));return adminListSchema.parse(await this.request(`/api/campus/admin/${section}?${params}`)); }
   async pushStatus(endpoint: string | null) { return pushStatusSchema.parse(await this.request('/api/campus/push/status', {endpoint})); }
   async enablePush(subscription: DeviceSubscription, locale: 'en' | 'it') { return pushStatusSchema.parse(await this.request('/api/campus/push/subscribe', {subscription,locale})); }
   async disablePush(endpoint: string) { return pushStatusSchema.parse(await this.request('/api/campus/push/unsubscribe', {endpoint})); }
@@ -60,6 +64,7 @@ export class LiveCampusClient implements CampusClient {
   async home() { const home = campusHomeSchema.parse(await this.request('/api/campus')); this.sharedDemo = home.demo; return home; }
   async saveProfile(profile: CampusProfileInput) { return campusHomeSchema.parse(await this.request('/api/campus/profile', campusProfileSchema.parse(profile))); }
   async answer(id: string, answer: 'yes' | 'no') { return campusHomeSchema.parse(await this.request(`/api/campus/matches/${encodeURIComponent(id)}/answer`, { answer })); }
+  async feedback(id:string,input:FeedbackInput) { return campusHomeSchema.parse(await this.request(`/api/campus/matches/${encodeURIComponent(id)}/feedback`, input)); }
   async requestCode(email: string) { return codeReceiptSchema.parse(await this.request('/api/campus/auth/request-code', { email })); }
   async verifyCode(challengeId: string, code: string) {
     const session = campusSessionSchema.parse(await this.request('/api/campus/auth/verify', { challengeId, code }));
