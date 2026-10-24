@@ -1,3 +1,4 @@
+import { pushStatusSchema, type DeviceSubscription } from './push-model';
 import { z } from 'zod';
 import { campusMapSchema, type LocationFix, type CampusMapState, campusHomeSchema, campusProfileSchema, campusSessionSchema, engineReportSchema, interestId, type CampusHome, type CampusProfileInput, type EngineReport } from './campus-model';
 import { sharedDemoAccounts } from './campus-demo-accounts';
@@ -50,6 +51,10 @@ export class LiveCampusClient implements CampusClient {
     }
     return result;
   }
+  async pushStatus(endpoint: string | null) { return pushStatusSchema.parse(await this.request('/api/campus/push/status', {endpoint})); }
+  async enablePush(subscription: DeviceSubscription, locale: 'en' | 'it') { return pushStatusSchema.parse(await this.request('/api/campus/push/subscribe', {subscription,locale})); }
+  async disablePush(endpoint: string) { return pushStatusSchema.parse(await this.request('/api/campus/push/unsubscribe', {endpoint})); }
+  async testPush(endpoint: string) { await this.request('/api/campus/push/test', {endpoint}); }
   async map(){return campusMapSchema.parse(await this.request("/api/campus/map"));}
   async shareLocation(fix:LocationFix|null){return campusMapSchema.parse(await this.request("/api/campus/map/location",fix));}
   async home() { const home = campusHomeSchema.parse(await this.request('/api/campus')); this.sharedDemo = home.demo; return home; }

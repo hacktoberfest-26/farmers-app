@@ -10,6 +10,7 @@ import { InterestAvatar } from './avatar';
 import { CampusAuth } from './auth';
 import { copy, type Locale, type Translate } from './copy';
 import { CampusMap } from './map';
+import { CampusNotifications, registerCampusWorker } from './notifications';
 import { Onboarding } from './onboarding';
 import '@/app/campus.css';
 
@@ -51,6 +52,13 @@ function PosterForm({ t, busy, onSubmit }: { t: Translate; busy: boolean; onSubm
 }
 
 export function CampusApplication() {
+  useEffect(() => { if ('serviceWorker' in navigator) void registerCampusWorker().catch(() => {}); }, []);
+  useEffect(() => {
+    const navigate = () => { const target = new URLSearchParams(window.location.search).get('tab'); if (target === 'matches' || target === 'connections') setTab(target === 'connections' ? 'connections' : 'suggestions'); };
+    const pushed = (event: MessageEvent) => { if (event.data?.type === 'farmers-open-matches') { setTab(event.data.tab === 'connections' ? 'connections' : 'suggestions'); setEditing(false); } };
+    navigate(); navigator.serviceWorker?.addEventListener('message', pushed);
+    return () => navigator.serviceWorker?.removeEventListener('message', pushed);
+  }, []);
   const [client, setClient] = useState<CampusClient | null>(null);
   const [home, setHome] = useState<CampusHome>(publicHome);
   const [locale, setLocale] = useState<Locale>('en');
@@ -99,7 +107,8 @@ export function CampusApplication() {
       {(tab === 'connections' ? revealed : anonymous).length ? (tab === 'connections' ? revealed : anonymous).map(match => <MatchCard key={match.id} match={match} locale={locale} t={t} onAnswer={answer} busy={busy}/>) : <Empty connections={tab === 'connections'} t={t}/>}
       {tab === 'agent' && home.events.length > 0 && <section className="cp-events-mobile"><h3>{t('comingUp')}</h3>{home.events.map(event => <div key={event.id}><CalendarDays size={18}/><span><strong>{event.title}</strong><small>{event.place}</small></span></div>)}</section>}
     </>}
-    </main>
+        {me && tab === 'profile' && !editing && client instanceof LiveCampusClient && <CampusNotifications key={me.id} client={client} locale={locale}/>}
+</main>
     </div>
     {me && <nav className="cp-bottom-nav" aria-label="Mobile navigation">{nav.map(item => <button type="button" key={item.id} className={tab === item.id || item.id==='suggestions'&&tab==='connections' ? 'active' : ''} onClick={() => changeTab(item.id)}><item.icon size={22} strokeWidth={1.7}/><span>{item.id==='agent'?(locale==='it'?'Oggi':'Home'):item.id==='suggestions'?(locale==='it'?'Incontri':'Matches'):t(item.id)}</span></button>)}</nav>}
     {notice && <div className="cp-toast" role="status"><Check size={16}/>{notice}</div>}

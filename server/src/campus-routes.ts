@@ -5,16 +5,19 @@ import { locationFixSchema, campusProfileSchema } from '../../src/lib/campus-mod
 import { CampusError, CampusService } from './campus-service';
 import type { CampusAI } from './backboard';
 import type { CommunityStore } from './store';
+import { CampusPush, type PushTransport } from './push';
+import { pushEndpointSchema, pushSubscriptionSchema } from '../../src/lib/push-model';
 import { seedSharedDemo, sharedDemoAccount } from './campus-shared-demo';
 
-export type CampusOptions = { ai:CampusAI|null; email?:{domains:string[];secret:string;sendCode:(email:string,code:string)=>Promise<void>}; sharedDemo?:{code:string}; scheduler?:boolean; recoverOnStart?:boolean };
+export type CampusOptions = { push?:PushTransport; ai:CampusAI|null; email?:{domains:string[];secret:string;sendCode:(email:string,code:string)=>Promise<void>}; sharedDemo?:{code:string}; scheduler?:boolean; recoverOnStart?:boolean };
 const emailInput=z.object({email:z.email().transform(value=>value.trim().toLowerCase())});
 const challengeRow=z.object({id:z.string(),email:z.string(),code_hash:z.string(),expires:z.number(),attempts:z.number(),consumed:z.number().nullable()});
 const errorResponse={error:'Enter valid details and try again'};
 export function registerCampusRoutes(app:FastifyInstance,store:CommunityStore,authenticate:(request:FastifyRequest)=>string|null,options:CampusOptions) {
   const db=store.db;
   const email=options.email;
-  const campus=new CampusService(db,{ai:options.ai,auth:{emailEnabled:!!email,domains:email?.domains??[],sharedDemo:!!options.sharedDemo}});
+  const campus=new CampusService(db,{ai:options.ai,notify:(id,recipients,kind)=>push.enqueue(id,recipients,kind),auth:{emailEnabled:!!email,domains:email?.domains??[],sharedDemo:!!options.sharedDemo}});
+  const push=new CampusPush(db,options.push,(userId,proposalId,kind)=>campus.home(userId).suggestions.some(match=>match.id===proposalId && match.kind===(kind==='match'?'revealed':'anonymous')));
   if(options.recoverOnStart)campus.recoverInterruptedRun();
   if(options.sharedDemo)seedSharedDemo(store,campus);
   db.exec(`CREATE TABLE IF NOT EXISTS campus_otp(id TEXT PRIMARY KEY,email TEXT NOT NULL,code_hash TEXT NOT NULL,expires INTEGER NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,consumed INTEGER,created INTEGER NOT NULL);
@@ -50,6 +53,26 @@ export function registerCampusRoutes(app:FastifyInstance,store:CommunityStore,au
     if(id)ensure(id);
     return campus.home(id);
   }));
+  const pushToken=(request:FastifyRequest)=>{actor(request);return request.headers.authorization!.slice(7);};
+  app.post('/api/campus/push/status',guarded(request=>{
+    const {endpoint}=z.object({endpoint:pushEndpointSchema.nullable()}).parse(request.body);
+    return push.status(pushToken(request),endpoint);
+  }));
+  app.post('/api/campus/push/subscribe',guarded(request=>{
+    const {subscription,locale}=z.object({subscription:pushSubscriptionSchema,locale:z.enum(['en','it'])}).parse(request.body);
+    return push.subscribe(pushToken(request),subscription,locale);
+  }));
+  app.post('/api/campus/push/unsubscribe',guarded(request=>{
+    const {endpoint}=z.object({endpoint:pushEndpointSchema}).parse(request.body);
+    return push.unsubscribe(pushToken(request),endpoint);
+  }));
+  app.post('/api/campus/push/test',{config:{rateLimit:{max:3,timeWindow:'1 minute'}}},guarded(request=>{
+    const {endpoint}=z.object({endpoint:pushEndpointSchema}).parse(request.body);
+    return push.test(pushToken(request),endpoint);
+  }));
+  const pushTimer=setInterval(()=>{void push.flush().catch(()=>app.log.error({category:'push_delivery_failed'},'Push delivery failed'));},5000);
+  pushTimer.unref();
+  app.addHook('onClose',async()=>{clearInterval(pushTimer);await push.flush();});
   app.get('/api/campus/map',guarded(request=>campus.map(actor(request))));
   app.post('/api/campus/map/location',guarded(request=>campus.shareLocation(actor(request),locationFixSchema.nullable().parse(request.body))));
   app.post('/api/campus/profile',guarded(request=>campus.saveProfile(actor(request),campusProfileSchema.parse(request.body))));

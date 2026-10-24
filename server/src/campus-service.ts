@@ -30,7 +30,7 @@ export class CampusError extends Error {
   constructor(readonly statusCode: number, message: string) { super(message); }
 }
 
-type Options = { ai: CampusAI | null; auth: { emailEnabled: boolean; domains: string[]; sharedDemo?: boolean }; now?: () => number };
+type Options = { notify?: (proposalId: string, recipients: readonly string[], kind: 'suggestion' | 'match') => void; ai: CampusAI | null; auth: { emailEnabled: boolean; domains: string[]; sharedDemo?: boolean }; now?: () => number };
 type Pair = { a: CampusMember; b: CampusMember; kind: MatchType; key: string; demoGeneration: number };
 
 /** Owns campus documents, consent projection and durable matching lifecycle. */
@@ -220,6 +220,7 @@ export class CampusService {
       }
       if (!this.projectProposal(proposal, member)) throw new CampusError(409, 'Suggestion unavailable');
       this.db.prepare('INSERT INTO campus_answers(proposal_id,user_id,answer) VALUES(?,?,?)').run(proposalId, id, answer);
+      if (this.projectProposal(proposal, member)?.kind === 'revealed') this.options.notify?.(proposalId, [proposal.a, proposal.b], 'match');
     });
     return this.home(id);
   }
@@ -309,6 +310,7 @@ export class CampusService {
         .run(id, pair.key, a.id, b.id, pair.kind, JSON.stringify(reasons), this.now() + 72 * 60 * 60_000);
       const insert = this.db.prepare('INSERT INTO campus_deliveries(user_id,proposal_id,campus_day) VALUES(?,?,?)');
       insert.run(a.id, id, dayKey(this.now())); insert.run(b.id, id, dayKey(this.now()));
+      this.options.notify?.(id, [a.id, b.id], 'suggestion');
       this.db.prepare("UPDATE campus_jobs SET status='published',lease_until=0 WHERE pair_key=?").run(pair.key);
       return true;
     });
