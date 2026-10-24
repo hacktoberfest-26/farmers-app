@@ -45,6 +45,7 @@ it('uses the real inference boundary and shares consent decisions between two de
 });
 
 it('does not grant fictional people administrator access and revokes only the switching device session',async()=>{
+  expect((await request('POST','/api/campus/delete',{confirmation:'DELETE'},tokens.alex)).statusCode).toBe(403);
   expect((await request('POST','/api/campus/admin/reset-demo',{confirmation:'RESET DEMO'},tokens.nina)).statusCode).toBe(403);
   expect((await request('POST','/api/campus/admin/run-engine',{},tokens.alex)).statusCode).toBe(403);
   const switched=await request('POST','/api/campus/demo/switch',{alias:'leo'},tokens.alex);

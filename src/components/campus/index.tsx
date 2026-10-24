@@ -40,7 +40,7 @@ function ProfileView({ me, demo, sharedDemo, t, onEdit, onExport, onDelete }: { 
     <div className="cp-profile-block"><h3>{t('skills')}</h3><div className="cp-chips">{me.profile.skills.map(skill => <span className="cp-chip" key={skill}>{t(skill)}</span>)}</div></div>
     <div className="cp-profile-block"><h3><LockKeyhole size={15}/>{t(me.profile.privateIdea ? 'privateIdeaLabel' : 'noPrivateIdea')}</h3><p className="cp-muted">{t(demo ? 'ideaDemo' : 'ideaHint')}</p></div>
     <div className="cp-profile-block"><h3>{t('privacySettings')}</h3><p className="cp-muted">{t('matchingConsent')} <strong>{me.profile.consent.matching ? '✓' : '—'}</strong></p><p className="cp-muted">{t('aiConsent')} <strong>{me.profile.consent.hostedAi ? '✓' : '—'}</strong></p><button type="button" className="cp-text-button" onClick={onEdit}>{t('edit')}<ArrowRight size={14}/></button></div>
-    <div className="cp-profile-tools"><button type="button" className="cp-btn cp-secondary" onClick={onExport}><Download size={15}/>{t('export')}</button><button type="button" className="cp-text-button cp-danger" onClick={onDelete}>{t('delete')}</button></div>
+    <div className="cp-profile-tools"><button type="button" className="cp-btn cp-secondary" onClick={onExport}><Download size={15}/>{t('export')}</button>{!sharedDemo && <button type="button" className="cp-text-button cp-danger" onClick={onDelete}>{t('delete')}</button>}</div>
   </div>;
 }
 

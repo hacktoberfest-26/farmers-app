@@ -131,6 +131,7 @@ export function registerCampusRoutes(app:FastifyInstance,store:CommunityStore,au
   app.post('/api/campus/delete',guarded(async request=>{
     z.object({confirmation:z.literal('DELETE')}).parse(request.body);
     const id=actor(request),me=campus.member(id);
+    if(me?.verification==='demo')throw new CampusError(403,'Shared fictional personas are managed by the presenter. Use the operator demo reset.');
     if(me?.role==='admin')throw new CampusError(403,'The deployment operator must transfer administration before deleting this account');
     if(me)db.prepare('DELETE FROM campus_otp WHERE email=?').run(me.email);
     store.deleteAccount(id);
