@@ -1,0 +1,49 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    env_file:
+      - .env
+    environment:
+      API_HOST: ${API_HOST:-0.0.0.0}
+      PORT: ${PORT:-8080}
+      SQLITE_PATH: ${SQLITE_PATH:-/data/hcommunity.sqlite}
+      CORS_ORIGIN: ${CORS_ORIGIN:?Set the exact public frontend origin in .env}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:?Set the first administrator email in .env}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?Set the bootstrap administrator password in .env}
+      USE_DEMO_DATA: ${USE_DEMO_DATA:-false}
+    volumes:
+      - hcommunity_data:/data
+      - ${BACKUP_DIR:-./backups}:/backups
+    expose:
+      - "8080"
+    restart: unless-stopped
+    networks:
+      - web
+
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./ops/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - web
+
+volumes:
+  hcommunity_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  web:
