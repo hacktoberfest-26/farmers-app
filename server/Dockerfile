@@ -4,6 +4,7 @@ COPY server/package.json server/package-lock.json ./
 RUN npm ci --omit=dev
 COPY server/ ./server/
 COPY src/lib/ ./src/lib/
+COPY packages/ ./packages/
 COPY tsconfig.json ./tsconfig.json
 ENV NODE_ENV=production \
     API_HOST=0.0.0.0 \

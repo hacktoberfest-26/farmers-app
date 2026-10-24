@@ -1,6 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { buildServer } from './app';
+import { campusConfiguration } from './campus-config';
 
 const production = process.env.NODE_ENV === 'production';
 const host = process.env.API_HOST ?? (production ? '0.0.0.0' : '127.0.0.1');
@@ -22,7 +23,9 @@ if (production) {
   if (parsed.protocol !== 'https:' || parsed.origin !== corsOrigin) throw new Error('CORS_ORIGIN must be one exact HTTPS origin');
 }
 mkdirSync(dirname(sqlitePath), { recursive: true });
-const app = buildServer({ sqlitePath, corsOrigin, bootstrapAdminEmail, bootstrapAdminPassword, demoData });
+let cleanupFailures=0;
+const campus=campusConfiguration(process.env,()=>{cleanupFailures++;app.log.warn({category:'backboard_cleanup_failed',count:cleanupFailures},'Temporary AI conversation cleanup failed');});
+const app = buildServer({ sqlitePath, corsOrigin, bootstrapAdminEmail, bootstrapAdminPassword, demoData, campus });
 const close = async () => { await app.close(); process.exit(0); };
 process.once('SIGTERM', () => void close());
 process.once('SIGINT', () => void close());

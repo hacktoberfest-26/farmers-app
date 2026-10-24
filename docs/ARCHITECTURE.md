@@ -1,39 +1,37 @@
-# Architecture
+# Farmers architecture
 
-Farmers serves a static Next.js PWA from GitHub Pages and a Node.js API from a DigitalOcean Droplet. Both use the same Zod schemas and pure domain rules. The backend uses SQLite; PostgreSQL and Supabase are not dependencies.
+The static Next.js PWA runs on GitHub Pages. A single Node.js 24 Fastify API on DigitalOcean owns SQLite, authentication, anonymous introductions, and the background engine. Hosted Gemma is called through Backboard from the backend. Python, Ollama, local inference, and PostgreSQL are not used.
 
-## Data flow
+## Campus boundary
 
-The interface calls `client.snapshot()` and `client.execute(command)`. `NEXT_PUBLIC_API_URL` chooses the data transport once at build time. In shared mode, those operations call `GET /api/community` and `POST /api/commands` with a bearer session. In local demo mode, sql.js runs SQLite WebAssembly in the browser and persists the database in IndexedDB. Demo changes stay in that browser.
+`src/lib/campus-model.ts` defines shared Zod contracts and the controlled category vocabulary. `src/lib/campus-client.ts` exposes complete frontend operations and validates network responses. `src/components/campus` owns bilingual onboarding, interest avatars, suggestions, revealed connections, profile controls, and staff tools.
 
-- `src/lib/model.ts`: boundary schemas, domain types and deployment configuration.
-- `src/lib/policy.ts`: matching, eligibility and command transitions.
-- `src/lib/client.ts`: HTTP/auth and browser persistence; transport types do not leak into screens.
-- `src/lib/sqlite.ts`: browser SQLite schema, transactional writes and binary export.
-- `src/lib/seed.ts`: fictional people, sessions, nine bilingual guides and explicitly unverified venues.
-- `server/src/app.ts`: Fastify HTTP/auth boundary, exact-origin CORS, rate limits and security headers.
-- `server/src/store.ts`: SQLite transactions, password credentials, hashed session tokens and user preferences.
-- `server/src/project.ts`: the sole projection of stored data into an authorized response.
-- `src/components/`: responsive feed, discovery, social, session, onboarding and administration UI.
-- `src/messages/`: English and Italian next-intl dictionaries.
-- `public/`: scoped service worker, install manifest, original sprout mark and SQLite runtime.
+`server/src/campus-service.ts` owns member documents, proposal projection, independent answers, the quota ledger, events, and durable engine leases. Member documents are small versioned JSON records linked to existing account IDs. Proposals, answers, work leases, and delivery counts use relational tables. No campus directory is sent to clients.
 
-## Persistence and authority
+`server/src/campus-routes.ts` authenticates, parses requests, and invokes those operations. `server/src/store.ts` remains the single account/session writer. University-code proof is recorded separately from legacy password authentication. New OTP accounts have password login disabled. Existing bootstrap operator credentials remain valid.
 
-The server stores a validated community snapshot as JSON in one SQLite row, with separate relational tables for credential records, hashed session tokens and per-user preferences. This intentionally small prototype design favors a single writer and straightforward transactions. Commands run inside `BEGIN IMMEDIATE`; authoritative state is read again inside that transaction, so simultaneous joins cannot overfill a session. It is a single-community deployment. Independent communities run separate instances and SQLite files.
+Only the authenticated owner receives their member document and private idea. Anonymous cards have an opaque proposal ID, interest avatar, controlled reasons, expiry, and the actor's own answer. Two persisted yeses permit identity disclosure. A no, expiry, missing member, or withdrawn consent makes the anonymous suggestion disappear. Revealed contacts remain available after the proposal deadline while both members continue to consent.
 
-The server derives the actor from a random bearer token, never a submitted profile ID. Passwords are salted scrypt hashes. Raw session tokens are returned once, hashed in SQLite, and held in the frontend tab’s sessionStorage. Public registration always starts pending; operator-controlled startup credentials create the first administrator. No default password or public email-based promotion exists.
+## Matching and inference
 
-Public responses contain guides, venues, settings and announcements. Private profiles require approved adult membership and completed onboarding. Accepted connections can see each other when hidden from discovery. Blocks apply both ways. Messaging requires an accepted connection. Applicant, invitee and waitlist IDs are restricted to the organizer, administrator and the relevant individual. Admins can review pending profiles. Saved sessions, likes and notifications have separate ownership in the server store.
+The engine scans at most 200 completed, verified or operator-authorized, consenting member documents. Cheap rules choose compatible goals, shared interests, or the same sport and level with overlapping day and time slot. The server claims a durable singleton run lease and canonical pair jobs before making any model call. It never holds a SQLite write transaction across a network request.
 
-A confirmed group does not imply an external venue booking. Session instants are UTC; forms and displays use the configured IANA timezone. Nonexistent daylight-saving wall times are rejected. Matching unions overlapping weekly availability slots before scoring. Different timezones are not asserted to overlap without conversion.
+`packages/anonymiser` constructs a new allowlisted input object. It cannot copy names, emails, private ideas, or stable account identifiers. `server/src/backboard.ts` hides the Backboard protocol, explicit model selection, JSON validation, timeouts, and task conversation cleanup. Model prose is never used as a suggestion reason. The service checks returned reason codes against the actual pair facts.
 
-## Prototype limits
+After inference, a short `BEGIN IMMEDIATE` transaction checks lease ownership, unchanged profile revisions, current consent, uniqueness, score threshold, and both delivery counts. Only then does it insert the proposal and both delivery facts. Refusing a suggestion or deleting the other participant does not refund daily quota. Scoring is limited to twelve attempts per run and thirty per Europe/Rome day for live members, with an independent one-hundred-attempt demo budget. Interest and poster calls have separate durable per-user daily limits.
 
-The API returns a full permitted snapshot and the browser polls every 15 seconds. This fits a small prototype, not a large installation; pagination and delta updates should precede scaling. SQLite JSON snapshots are not a normalized production schema. Email ownership verification, recovery mail, push notifications, calendar integration and multi-tenant hosting are not implemented. Adult eligibility is an attestation. Venue information is fictional or unverified.
+The five-minute scheduler and administrator trigger call the same engine. Failed model requests create no suggestion and do not trigger a silent rules fallback. The shared fictional presentation uses the actual hosted model and SQLite. Its `demo` verification marker restricts matching, suggestions, events, and resets to the demo cohort. The separate local rules preview makes no API calls.
 
-The PWA caches its public shell and static resources. API responses are not service-worker cached. Commands fail explicitly offline. Demo profile switching is a simulation and does not provide account security.
+## Hosted privacy
 
-## Design decision
+Memory is disabled and conversations are not reused between tasks. Returned task conversations are deleted after parsing, including known failed responses. Cleanup failures emit a content-free operational warning. No zero-retention claim is made for upstream services.
 
-Two independent architecture candidates compared server-centric and client-first designs. An independent judge selected the client-first boundary for GitHub Pages compatibility. The user then selected a separate Node.js/SQLite backend on DigitalOcean. That requirement replaces the original suggested Supabase stack. Transactional capacity, private response projections, protected roles and mutual-connection messaging remain enforced on the server. Existing repository MIT licensing is preserved.
+Pair requests contain canonical categories only. Custom interest classification sends separately consented, bounded, pattern-scrubbed text. That scrubber cannot recognize all personal information. Poster reading sends a staff-selected image after explicit disclosure. Private idea analysis is not implemented and private idea text is excluded from every pair request.
+
+## Legacy data and deployment
+
+The original community snapshot and password accounts remain in the same SQLite file. `server/src/campus-legacy.ts` centrally excludes campus members and their social records from legacy projections. Legacy commands reject campus actors and targets. This includes legacy administrator views and exports, so the archive cannot bypass double opt-in.
+
+The PWA caches public static assets. It does not cache API responses or queue commands offline. Existing local sports demo data is separate from the new fictional campus demo. The new demo validates persisted browser data and makes no AI requests.
+
+The private shared-demo passcode enables twelve server-backed fictional identities and 24-hour sessions. Disabling it also gates retained demo members out of scheduled inference. University email delivery and exact domain allowlists are configurable but disabled in the deployed prototype. Interest categories, directory prefills, staff alerts, and resource availability in the demo are fictional or provisional. Live campus data sources, Web Push, private-idea analysis, and a production compliance review remain outside this implementation.

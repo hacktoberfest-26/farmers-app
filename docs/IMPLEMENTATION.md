@@ -1,16 +1,19 @@
 # Implementation status
 
-- [x] Ground: greenfield repository, product specification v2, existing MIT license.
-- [x] Sketch: compare two independent architecture candidates and cross-judge them.
-- [x] Agree: use a static PWA and small domain boundary; user selects Node.js/SQLite backend on DigitalOcean.
-- [x] Implement: nine bilingual sports, community feed, matching, connections, messages, sessions, profiles, availability, administration, local demo, real account API and PWA assets.
-- [x] Verify: TypeScript, pure domain tests, SQLite binary persistence tests and HTTP tests with real server SQLite.
-- [x] Verify: browser guide/language, connection acceptance, private message, session creation and joining.
-- [x] Verify: live HTTPS API health, admin login, CORS and logout; responsive layout at 390px with no horizontal overflow.
-- [x] Verify: deployed PWA shell reloads with Chrome network emulation offline and shows the reconnect error when API data is unavailable. Restored normal networking after the check.
-- [x] Verify: administrator sign-in and sign-out through the deployed frontend.
-- [x] Deliver: GitHub Pages at farmers.johno.it, Gandi DNS, HTTPS, DigitalOcean API at api.farmers.johno.it and an initial online SQLite backup.
-- [x] Verify: GitHub Actions build and deployment succeeded with all 32 tests passing.
-
 Product: Farmers. Tagline: Harvest your future / By shaping your identity.
-All seeded personal data is fictional. Venue claims remain explicitly unverified. The prototype is not the production pilot described by the full specification; operational and identity integrations are documented separately.
+
+The refined specification replaces the sports-directory homepage with a proactive campus agent. The user's decisions retain Next.js PWA, Node.js, SQLite, the sprout identity, and hosted Gemma through Backboard from DigitalOcean.
+
+- [x] Compare two design candidates and obtain an independent cross-judgement.
+- [x] Implement strict private member documents, controlled anonymisation, real Backboard adapter and conversation cleanup.
+- [x] Implement four onboarding screens, interest avatars, bilingual UI, anonymous proposals, bilateral reveal, consent controls, export and deletion.
+- [x] Prevent the legacy sports API from exposing campus identities.
+- [x] Implement durable leases, duplicate protection, 72-hour proposal expiry, bounded inference and three daily introductions per person.
+- [x] Implement configurable university OTP delivery with hashes, expiry, attempt limits and one-time consumption. Delivery remains disabled by user choice.
+- [x] Verify actual Gemma scoring and the full two-yes flow from DigitalOcean using an isolated temporary SQLite database.
+- [x] Implement passcode-protected shared fictional accounts, real server inference, independent device sessions and three-second synchronization.
+- [x] Implement demo/live cohort isolation, staff event isolation and operator-only demo reset with in-flight generation fencing.
+- [x] Check local browser onboarding, first-yes anonymity, two-yes reveal and mobile layout at 390px.
+- [ ] Complete final shared-demo deployment and independent browser-session checks.
+
+The local rules preview is explicitly separate from the shared Gemma demonstration. All demo identities, alerts and directory prefills are fictional. Interest categories are provisional. No real campus directory, sensor feed, Web Push, or private-idea analysis is connected.

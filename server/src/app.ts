@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { commandSchema } from '../../src/lib/model';
 import { CommunityStore } from './store';
 import { projectState } from './project';
+import { registerCampusRoutes, type CampusOptions } from './campus-routes';
+import { campusSafeLegacy, targetsCampus } from './campus-legacy';
 
 const scrypt = promisify(scryptCallback);
 const registerSchema = z.object({
@@ -26,7 +28,7 @@ const verifyPassword = async (password: string, salt: string, expected: string) 
   return candidate.length === stored.length && timingSafeEqual(candidate, stored);
 };
 
-export type ServerOptions = { sqlitePath: string; corsOrigin: string; bootstrapAdminEmail?: string; bootstrapAdminPassword?: string; demoData?: boolean };
+export type ServerOptions = { sqlitePath: string; corsOrigin: string; bootstrapAdminEmail?: string; bootstrapAdminPassword?: string; demoData?: boolean; campus?:CampusOptions };
 
 export function buildServer(options: ServerOptions): FastifyInstance {
   const app = Fastify({ logger: process.env.NODE_ENV !== 'test', trustProxy: (_address, hop) => hop === 0, bodyLimit: 64 * 1024 });
@@ -61,12 +63,15 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     const token = bearer(request);
     return token ? store.sessionUser(token) : null;
   };
+  registerCampusRoutes(app,store,userId,options.campus??{ai:null,scheduler:false});
+  const campusIds=()=>new Set(store.db.prepare('SELECT user_id FROM campus_members').all().map(row=>z.object({user_id:z.string()}).parse(row).user_id));
+  const legacyState=()=>campusSafeLegacy(store.readState(),campusIds());
 
   app.get('/health', async () => ({ status: 'ok' }));
   app.get('/api/community', async (request, reply) => {
     const id = userId(request);
     if (request.headers.authorization && !id) return reply.code(401).send({ error: 'Invalid session' });
-    return projectState(store.readState(), id, id ? store.preferences(id) : { saved: [], likes: [], notifications: [] });
+    return projectState(legacyState(), id, id ? store.preferences(id) : { saved: [], likes: [], notifications: [] });
   });
   app.post('/api/auth/register', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (request, reply) => {
     const parsed = registerSchema.safeParse(request.body);
@@ -89,7 +94,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     if (!parsed.success) return reply.code(400).send({ error: 'Invalid login' });
     const account = store.userByEmail(parsed.data.email);
     const valid = await verifyPassword(parsed.data.password, account?.salt ?? 'missing-account-salt', account?.password_hash ?? '0'.repeat(128));
-    if (!account || !valid) return reply.code(401).send({ error: 'Invalid login' });
+    if (!account || !valid || !account.password_enabled) return reply.code(401).send({ error: 'Invalid login' });
     return { token: store.createSession(account.id), userId: account.id };
   });
   app.post('/api/auth/logout', async (request, reply) => {
@@ -103,9 +108,11 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     if (!id) return reply.code(401).send({ error: 'Sign in required' });
     const parsed = commandSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: 'Invalid command' });
+    const ids=campusIds();
+    if(ids.has(id)||targetsCampus(parsed.data,store.readState(),ids))return reply.code(403).send({error:'Use the campus agent for this account'});
     try {
       const state = store.execute(id, parsed.data);
-      return projectState(state, id, store.preferences(id));
+      return projectState(campusSafeLegacy(state,ids), id, store.preferences(id));
     } catch (error) {
       return reply.code(400).send({ error: error instanceof Error ? error.message : 'Command failed' });
     }
@@ -113,7 +120,8 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   app.get('/api/export', async (request, reply) => {
     const id = userId(request);
     if (!id) return reply.code(401).send({ error: 'Sign in required' });
-    const state = projectState(store.readState(), id, store.preferences(id));
+    if(campusIds().has(id))return reply.code(403).send({error:'Use the campus export for this account'});
+    const state = projectState(legacyState(), id, store.preferences(id));
     return { profile: state.profiles.find(person => person.id === id),
       connections: state.connections, messages: state.messages,
       sessions: state.sessions.filter(session => session.organizerId === id || session.participants.includes(id) || session.pending.includes(id) || session.waitlist.includes(id)),

@@ -74,3 +74,11 @@ To test a restore, copy a backup into a separate staging volume, set `SQLITE_PAT
 Check sign-in, onboarding, pending membership, admin approval, session participation, connections, messaging, and logout with separate accounts. Confirm the API sends the exact frontend CORS origin. Frontend API configuration is compiled into the bundle, so changing it requires another Pages build.
 
 The service worker caches previously loaded static assets. API mode requires network access and does not cache private API responses. Interactive commands show an error while offline. Browser demo SQLite also requires an initial download of its bundled WebAssembly runtime.
+
+## Configure hosted Gemma and the shared presentation
+
+Set `BACKBOARD_API_KEY`, `BACKBOARD_PROVIDER=openrouter`, and `BACKBOARD_MODEL=google/gemma-4-26b-a4b-it` in the private server `.env`. The model was verified through Backboard's catalogue and real inference calls from DigitalOcean. Model selection remains configurable. Recreate the API container after changing private environment values.
+
+Set a private `CAMPUS_DEMO_CODE` with at least eight characters to enable the shared fictional demo. Startup seeds twelve fictional accounts once; it does not overwrite profile edits on restart. These accounts have password login disabled and use their own demo access route. They cannot match live accounts, publish events to the live cohort, or reset the presentation themselves.
+
+See [the multi-device demonstration guide](DEMO.md). Demo sign-in sessions expire after 24 hours. The frontend requires a new Pages build only when public build settings change; server secrets never belong in a Pages build.

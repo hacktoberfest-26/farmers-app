@@ -1,24 +1,28 @@
 # Security policy
 
-Farmers has a browser-only demo and an optional shared Node.js API. Demo profiles and profile switching are fictional simulations, not authentication. API mode uses scrypt password hashes and hashed bearer tokens, with the bearer token stored in `sessionStorage` for the current browser tab. It does not use cookie sessions.
+Farmers is a prototype with a shared Node.js/SQLite backend and a separate fictional browser demo. The local rules preview uses no real authentication or AI. The shared fictional presentation uses passcode-protected server sessions and actual hosted Gemma. Demo identities are intentionally shared by presenters and must contain invented information. Demo members cannot match live accounts or publish to their event cohort. Only the deployment operator can reset shared introductions. The deployed shared service also offers operator password access; university email codes require separately configured SMTP and approved exact domains.
 
-The API prototype does not have a verified email transport or recovery flow. Email addresses are not proven to belong to their registrants. Adult status is an attestation, not an age check. New accounts remain pending until an administrator approves them, except the bootstrap administrator created from private server configuration. Operators must not interpret these controls as identity verification or safeguarding.
+## Campus disclosure boundary
 
-Do not use the demo mode to store real personal information. Before inviting real members to API mode, review the implementation and deployment yourself, require HTTPS, restrict the API to expected frontend origins, protect and back up the SQLite file, and establish support, moderation, account recovery, retention, and incident response processes. Do not deploy this prototype for minors.
+The backend returns private profile fields only to their owner. Anonymous suggestions omit the other person's identity and stable account ID. Two independent yeses permit name, course, year, and email disclosure. Refusals close silently. Consent withdrawal stops future disclosure but cannot retract information already seen.
+
+Campus members and their social records are excluded from legacy archive responses, including administrator projections and exports. Legacy commands reject campus actors and targets. Staff cannot read private ideas through campus endpoints. The database operator can access server storage; the prototype does not provide end-to-end encryption.
+
+Pair scoring sends only controlled categories to hosted Gemma through Backboard. Private idea text is stored for the owner and not sent for matching. Separately consented interest text is pattern-scrubbed, not guaranteed anonymous. Staff-selected poster images are sent to the hosted provider. Backboard memory is disabled and returned task conversations are deleted after use, without a claim of zero provider retention.
+
+## Credentials and operations
+
+- Store Backboard, SMTP, OTP, and bootstrap secrets only in private server configuration. Never expose them through frontend environment variables, logs, source, or API responses.
+- Passwords use salted scrypt hashes. Bearer tokens are random; SQLite stores their hashes. The browser keeps the raw token in tab-scoped sessionStorage. Protect against script injection.
+- OTPs are six-digit random values, HMAC-hashed, limited to five verification attempts, valid for ten minutes, and consumed once. The mocked directory does not verify university affiliation.
+- Keep HTTPS enabled for both public origins. The API listener remains private behind Caddy. CORS is restricted to the frontend origin and does not replace authentication.
+- Keep one API instance per SQLite database. Back up with SQLite's online backup utility and test restores.
+- Matching and paid AI tasks have persistent limits. Provider failures never generate fabricated AI results.
 
 ## Report a vulnerability
 
-Please use GitHub’s **Report a vulnerability** action in the repository Security tab (private vulnerability reporting), or contact a repository maintainer privately through GitHub if that option is unavailable. Do not open a public issue for an exploitable vulnerability or include personal information, tokens, passwords, or production database contents in a public report.
+Use GitHub's private vulnerability reporting or contact a maintainer privately through GitHub. Do not post exploitable details, credentials, member information, or database contents in a public issue.
 
-Include the affected version or commit, impact, reproduction steps, and safe proof of concept. Give maintainers reasonable time to investigate before public disclosure. Do not test against a third-party deployment without the operator’s permission.
+Include the affected commit, impact, and safe reproduction steps. Do not test another deployment without its operator's permission.
 
-## Deployment security notes
-
-- Use HTTPS for the frontend and API. Bearer tokens are accessible to JavaScript in the current tab; a cross-site scripting flaw could expose them.
-- Keep the API listener private behind the HTTPS reverse proxy. Set `CORS_ORIGIN` to the exact frontend origin; CORS is not authentication.
-- Set an operator-controlled `BOOTSTRAP_ADMIN_EMAIL` and a unique `BOOTSTRAP_ADMIN_PASSWORD` of at least 16 characters. Startup creates this administrator before accepting public registration. Public registration always creates pending members.
-- Keep `SQLITE_PATH` on persistent protected storage. Back up using SQLite’s online backup API and test restoration. Droplet disk and backups need access controls and encryption at rest appropriate to the operator.
-- `USE_DEMO_DATA=false` is required for a shared deployment unless the operator intentionally wants the fictional sample seed. Never mistake the seed for verified venue information.
-- Do not run multiple API replicas against the same SQLite file or put the database on an ephemeral filesystem.
-
-The project does not provide an email delivery service, formal security review, response-time guarantee, or compliance certification.
+The project has no formal security review, email recovery service, or compliance certification. Its demo fixtures are fictional; production identity, data retention, support, and safeguarding require a separate operational review.
