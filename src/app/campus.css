@@ -19,3 +19,64 @@
 
 .campus-root .cp-notifications h2{display:flex;align-items:center;gap:10px}.campus-root .cp-notifications{margin-top:16px}
 .campus-root .cp-admin{display:grid;gap:16px}.campus-root .cp-admin-toolbar{display:flex;align-items:end;gap:12px}.campus-root .cp-admin-toolbar .cp-field{flex:1}.campus-root .cp-admin-tabs{display:flex;flex-wrap:wrap;gap:8px}.campus-root .cp-admin-tabs button{border:1px solid #dbe5eb;border-radius:20px;background:white;padding:10px 14px;min-height:44px;font-weight:650}.campus-root .cp-admin-tabs button.active{background:var(--cp-navy,#1d3557);color:white}.campus-root .cp-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.campus-root .cp-stat{background:white;border:1px solid #e1e8ee;border-radius:24px;padding:20px;display:grid;gap:10px}.campus-root .cp-stat>span{font-size:13px;color:#64748b}.campus-root .cp-stat>strong{font-size:30px;display:flex;align-items:center;gap:6px}.campus-root .cp-stat strong small{font-size:14px}.campus-root .cp-admin-card{padding:22px;border:1px solid #e1e8ee;border-radius:24px;background:white;overflow-wrap:anywhere}.campus-root .cp-admin-card p{margin:12px 0;white-space:pre-wrap}.campus-root .cp-admin-card small{color:#64748b}.campus-root .cp-admin-card summary{cursor:pointer;display:flex;align-items:center;gap:10px;min-height:44px;list-style:none}.campus-root .cp-admin-card summary strong{flex:1}.campus-root .cp-admin-card summary::after{content:'+';font-size:20px}.campus-root .cp-admin-card[open] summary::after{content:'−'}.campus-root .cp-admin-metric{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #eef3f6}.campus-root .cp-admin-bar{display:flex;align-items:center;gap:12px;margin:16px 0;font-size:13px}.campus-root .cp-admin-bar>span{min-width:85px}.campus-root .cp-admin-bar progress{flex:1;min-width:0;height:10px;accent-color:#ef3348}.campus-root .cp-admin-search{display:grid;gap:12px}.campus-root .cp-admin-paging{display:flex;gap:12px}.campus-root .cp-admin-paging>*{flex:1}.campus-root .cp-admin-feedback{background:#f1f6f8;border-radius:16px;padding:16px;margin:10px 0}.campus-root .cp-feedback{background:white;color:var(--cp-ink);border:1px solid #e1e8ee;border-radius:20px;margin-top:22px;padding:18px 16px}.campus-root .cp-feedback h4{font-size:18px;margin-bottom:10px}.campus-root .cp-feedback form{margin-top:16px}.campus-root .cp-feedback fieldset{border:0;min-width:0;padding:0;display:grid;gap:14px}.campus-root .cp-feedback legend{font-size:14px;padding-bottom:8px}.campus-root .cp-rating{display:flex;gap:8px}.campus-root .cp-rating button{width:44px;height:48px;display:grid;place-items:center;border-radius:14px;border:1px solid #dbe5eb;background:white;color:#9baaba}.campus-root .cp-rating button.selected{color:#ef3348;background:#fff2f3;border-color:#ef3348}.campus-root .cp-feedback textarea{resize:vertical;min-height:100px}
+
+/* Operator workspace: compact navigation on phones, a full dashboard on desktop. */
+.campus-root .cp-admin{padding:12px 20px 32px;align-items:start}
+.campus-root .cp-admin-sidebar{min-width:0;padding:8px 0 16px}
+.campus-root .cp-admin-sidebar h2{font-size:24px;letter-spacing:-.7px}
+.campus-root .cp-admin-tabs{flex-wrap:nowrap;overflow-x:auto;padding:4px 0 8px;scrollbar-width:thin}
+.campus-root .cp-admin-tabs button{display:flex;align-items:center;gap:10px;white-space:nowrap;flex-shrink:0}
+.campus-root .cp-admin-nav-arrow{display:none}
+.campus-root .cp-admin-content{display:grid;gap:18px;min-width:0}
+.campus-root .cp-admin-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 0}
+.campus-root .cp-admin-heading h2{font-size:30px;letter-spacing:-1px;margin-top:6px}
+.campus-root .cp-admin-overview,.campus-root .cp-admin-columns{display:grid;gap:18px;align-items:start}
+.campus-root .cp-admin-card h3{font-size:19px;letter-spacing:-.3px}
+.campus-root .cp-admin-record-title{display:grid;gap:5px;flex:1;min-width:0}
+.campus-root .cp-admin-record-title small{font-size:12px;font-weight:400}
+.campus-root .cp-admin-record-meta{font-size:12px;color:#64748b;display:none}
+.campus-root .cp-admin-card summary .cp-chip{flex-shrink:0}
+.campus-root .cp-admin-content>.cp-admin-card{border-radius:18px}
+.campus-root .cp-admin-search{padding:18px;background:white;border:1px solid #e1e8ee;border-radius:20px}
+.campus-root .cp-admin-paging{justify-content:flex-end}
+.campus-root .cp-admin-paging>*{flex:0 1 160px}
+@media(min-width:900px){
+ .campus-root:has(.cp-admin-shell){padding:0;background:#f0f5f8}
+ .campus-root .cp-shell.cp-admin-shell{max-width:1600px;width:100%;border-radius:0;overflow:visible;box-shadow:none;min-height:100dvh}
+ .campus-root .cp-admin-shell .cp-main{padding-bottom:24px;min-height:100dvh}
+ .campus-root .cp-admin-shell .cp-header{padding:12px 32px;border-bottom:1px solid #dce5ec}
+ .campus-root .cp-admin{grid-template-columns:230px minmax(0,1fr);gap:32px;padding:24px 32px 48px}
+ .campus-root .cp-admin-sidebar{position:sticky;top:100px;padding:0;gap:20px}
+ .campus-root .cp-admin-sidebar>.cp-muted{font-size:13px;line-height:1.6}
+ .campus-root .cp-admin-tabs{flex-direction:column;overflow:visible;gap:6px}
+ .campus-root .cp-admin-tabs button{width:100%;border:0;background:transparent;border-radius:14px;padding:14px;text-align:left}
+ .campus-root .cp-admin-tabs button:hover{background:#e2ebf1}
+ .campus-root .cp-admin-tabs button.active{background:#1d3557;color:white;box-shadow:0 5px 14px #1d35571a}
+ .campus-root .cp-admin-nav-arrow{display:block;margin-left:auto}
+ .campus-root .cp-admin-heading{padding:0 0 6px}
+ .campus-root .cp-admin-heading h2{font-size:36px}
+ .campus-root .cp-admin-overview,.campus-root .cp-admin-columns{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .campus-root .cp-admin-overview>.cp-stat-grid{grid-column:1/-1;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .campus-root .cp-admin-overview>.cp-admin-card:nth-child(3){grid-column:2;grid-row:2 / span 2}
+ .campus-root .cp-admin-search{grid-template-columns:minmax(0,1fr) auto;align-items:end}
+ .campus-root .cp-admin-search:has(select){grid-template-columns:minmax(0,1fr) minmax(140px,200px) auto}
+ .campus-root .cp-admin-search>.cp-btn{min-width:100px}
+ .campus-root .cp-admin-record-meta{display:block}
+ .campus-root .cp-admin-card summary{gap:18px}
+ .campus-root .cp-admin .cp-map-frame{height:560px;border-radius:24px}
+}
+@media(min-width:1300px){
+ .campus-root .cp-admin{grid-template-columns:250px minmax(0,1fr);gap:48px}
+ .campus-root .cp-admin-overview>.cp-stat-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+ .campus-root .cp-admin-overview>.cp-stat-grid .cp-stat{padding:18px 14px;border-radius:18px}
+}
+.campus-root .cp-admin-bar progress{appearance:none;border:0;border-radius:8px;overflow:hidden;background:#e9eff3}
+.campus-root .cp-admin-bar progress::-webkit-progress-bar{background:#e9eff3;border-radius:8px}
+.campus-root .cp-admin-bar progress::-webkit-progress-value{background:#14998c;border-radius:8px}
+.campus-root .cp-admin-bar progress::-moz-progress-bar{background:#14998c;border-radius:8px}
+@media(max-width:899px){
+ .campus-root .cp-admin-shell .cp-back-app{font-size:0;min-width:36px;min-height:44px;justify-content:center}
+ .campus-root .cp-admin-shell .cp-back-app svg{width:20px;height:20px}
+ .campus-root .cp-admin-sidebar>.cp-muted,.campus-root .cp-admin-sidebar>h2{display:none}
+ .campus-root .cp-admin-sidebar{gap:12px}
+}

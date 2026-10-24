@@ -1,0 +1,48 @@
+.campus-root .cp-home-welcome { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:22px 24px 12px; }
+.campus-root .cp-home-welcome h2 { font-size:30px; margin:8px 0; }
+.campus-root .cp-home-welcome h2>span { font-size:23px; margin-left:8px; color:#b97a08; }
+.campus-root .cp-home-welcome p { color:var(--cp-muted); font-size:15px; }
+.campus-root .cp-home-welcome>.cp-avatar { flex-shrink:0; width:88px; height:88px; }
+.campus-root .cp-home-welcome .cp-kicker { font-size:10px; }
+.campus-root .cp-next-actions { margin:12px 20px 20px; }
+.campus-root .cp-next-primary { display:flex; align-items:center; width:100%; gap:14px; text-align:left; background:var(--cp-ink); color:white; padding:22px 18px; border-radius:26px; }
+.campus-root .cp-next-primary strong { display:block; font-size:20px; line-height:1.25; }
+.campus-root .cp-next-primary small { display:block; color:#dde7ed; font-size:14px; margin-top:8px; line-height:1.5; }
+.campus-root .cp-next-primary>svg { flex-shrink:0; }
+.campus-root .cp-next-icon { background:#ffffff20; display:grid; place-items:center; width:42px; height:42px; border-radius:15px; flex-shrink:0; }
+.campus-root .cp-next-shortcuts { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+.campus-root .cp-next-shortcuts button { display:flex; align-items:center; gap:9px; text-align:left; min-height:72px; background:white; padding:14px; border-radius:22px; font-size:14px; font-weight:700; }
+.campus-root .cp-next-shortcuts button>svg { color:var(--cp-teal); flex-shrink:0; }
+.campus-root .cp-next-shortcuts button>svg:last-child { margin-left:auto; width:14px; }
+.campus-root .cp-next-shortcuts strong { margin-left:7px; color:var(--cp-red); }
+.campus-root .cp-agent-compact { padding:16px 18px; margin-top:0; background:#e5efed; box-shadow:none; }
+.campus-root .cp-agent-compact h3 { font-size:16px; }
+.campus-root .cp-agent-compact p { font-size:13px; margin-top:5px; }
+.campus-root .cp-bottom-nav>button { position:relative; }
+.campus-root .cp-nav-badge { position:absolute; top:0; left:calc(50% + 9px); background:var(--cp-red); color:white; font-size:10px; min-width:18px; height:18px; display:grid; place-items:center; border-radius:10px; border:2px solid white; }
+.campus-root .cp-edit-sections { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+.campus-root .cp-edit-sections button { flex:1; border-radius:14px; min-height:44px; padding:10px 12px; background:#e4edf2; font-size:13px; font-weight:700; }
+.campus-root .cp-edit-sections button.active { background:var(--cp-ink); color:white; }
+.campus-root .cp-onboard-actions { position:sticky; bottom:100px; z-index:5; background:#f0f5f8f5; border-radius:20px; padding:12px; box-shadow:0 4px 20px #1d35570a; }
+.campus-root .cp-back-app { white-space:nowrap; font-size:13px; }
+.campus-root .cp-match-list>.cp-empty { grid-column:1/-1; }
+@media(min-width:900px) {
+  .campus-root .cp-app-shell { max-width:900px; }
+  .campus-root:not(:has(.cp-admin-shell)) .cp-bottom-nav { max-width:620px; }
+  .campus-root .cp-app-shell .cp-home-welcome { padding:28px 32px 12px; }
+  .campus-root .cp-app-shell .cp-home-welcome h2 { font-size:36px; }
+  .campus-root .cp-app-shell .cp-home-welcome>.cp-avatar { width:110px; height:110px; }
+  .campus-root .cp-app-shell .cp-next-actions { display:grid; grid-template-columns:1.2fr 1fr; gap:16px; }
+  .campus-root .cp-app-shell .cp-next-shortcuts { margin:0; grid-template-columns:1fr; }
+  .campus-root .cp-app-shell .cp-match-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; padding:12px 20px 20px; align-items:start; }
+  .campus-root .cp-app-shell .cp-match-list>.cp-match { margin:0; }
+  .campus-root .cp-app-shell .cp-onboarding,.campus-root .cp-app-shell .cp-sign-in,.campus-root .cp-app-shell .cp-profile-identity { max-width:680px; margin-inline:auto; }
+  .campus-root .cp-app-shell .cp-map-frame { height:560px; }
+}
+@media(max-width:380px) {
+  .campus-root .cp-next-primary { gap:10px; padding:18px 14px; }
+  .campus-root .cp-next-primary strong { font-size:18px; }
+  .campus-root .cp-next-icon { display:none; }
+  .campus-root .cp-next-shortcuts button { padding:12px; gap:7px; font-size:13px; }
+  .campus-root .cp-next-shortcuts button>svg:last-child { display:none; }
+}

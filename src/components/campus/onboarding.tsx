@@ -25,10 +25,12 @@ export function Onboarding({ initial, client, locale, t, onSave, onCancel, busy 
     finally { setNormalising(false); }
   };
   const titles = [t('interests'), t('sports'), t('goals'), t('avatar')];
+  const editLabels = locale === 'it' ? ['Interessi', 'Sport', 'Obiettivi', 'Profilo e privacy'] : ['Interests', 'Sport', 'Goals', 'Profile & privacy'];
   const descriptions = [t('interestsHelp'), t('sportsHelp'), t('goalsHelp'), t('avatarHelp')];
   return <section className="cp-onboarding">
-    <div className="cp-onboard-top"><span className="cp-kicker">{t('step')} {step + 1} / 4</span>{onCancel && <button type="button" className="cp-text-button" onClick={onCancel}>{t('cancel')}</button>}</div>
-    <div className="cp-progress" aria-label={`${t('step')} ${step + 1} / 4`}>{titles.map((title, index) => <span key={title} className={index <= step ? 'done' : ''}/>)}</div>
+    <div className="cp-onboard-top"><span className="cp-kicker">{onCancel ? t('edit') : `${t('step')} ${step + 1} / 4`}</span>{onCancel && <button type="button" className="cp-text-button" onClick={onCancel}>{t('cancel')}</button>}</div>
+    {onCancel && <nav className="cp-edit-sections" aria-label={locale==='it'?'Sezioni del profilo':'Profile sections'}>{editLabels.map((title,index)=><button type="button" key={title} aria-current={step===index?'step':undefined} className={step===index?'active':''} onClick={()=>{setStep(index);setNotice('');}}>{title}</button>)}</nav>}
+    {!onCancel && <div className="cp-progress" aria-label={`${t('step')} ${step + 1} / 4`}>{titles.map((title, index) => <span key={title} className={index <= step ? 'done' : ''}/>)}</div>}
     <h2>{titles[step]}</h2><p className="cp-muted">{descriptions[step]}</p>
     {step === 0 && <div className="cp-stack">
       <div className="cp-interests">{interests.map(interest => <button type="button" key={interest.id} aria-pressed={profile.interests.includes(interest.id)} disabled={!profile.interests.includes(interest.id) && profile.interests.length >= 6} onClick={() => toggleInterest(interest.id)} className={`cp-interest ${profile.interests.includes(interest.id) ? 'selected' : ''}`}><span className="cp-interest-icon">{interest.icon}</span><strong>{interest[locale]}</strong>{profile.interests.includes(interest.id) && <Check size={15}/>}</button>)}</div>
@@ -55,6 +57,6 @@ export function Onboarding({ initial, client, locale, t, onSave, onCancel, busy 
       <div className="cp-consents">{(['matching', 'hostedAi', 'events', 'resources'] as const).filter(key => client.mode !== 'demo' || key !== 'hostedAi').map(key => <label className="cp-check" key={key}><input type="checkbox" checked={profile.consent[key]} onChange={event => update({ consent: { ...profile.consent, [key]: event.target.checked } })}/><span>{t(key === 'matching' ? 'matchingConsent' : key === 'hostedAi' ? 'aiConsent' : key === 'events' ? 'eventsConsent' : 'resourcesConsent')}</span></label>)}{client.mode === 'demo' && <p className="cp-note">{t('demoAgentCopy')}</p>}</div>
     </div>}
     {notice && <p className="cp-inline-notice" role="status">{notice}</p>}
-    <div className="cp-onboard-actions"><button type="button" className="cp-text-button" onClick={() => { setStep(current => current - 1); setNotice(''); }} disabled={step === 0 || busy}><ArrowLeft size={15}/>{t('back')}</button><button type="button" className="cp-btn" disabled={!valid || busy} onClick={() => { if (step < 3) { setStep(current => current + 1); setNotice(''); } else void onSave(campusProfileSchema.parse(profile)); }}>{step === 3 ? t(onCancel ? 'save' : 'finish') : t('next')}<ArrowRight size={15}/></button></div>
+    <div className="cp-onboard-actions">{onCancel ? <button type="button" className="cp-text-button" onClick={onCancel} disabled={busy}>{t('cancel')}</button> : <button type="button" className="cp-text-button" onClick={() => { setStep(current => current - 1); setNotice(''); }} disabled={step === 0 || busy}><ArrowLeft size={15}/>{t('back')}</button>}<button type="button" className="cp-btn" disabled={!(onCancel ? campusProfileSchema.safeParse(profile).success : valid) || busy} onClick={() => { if (step < 3 && !onCancel) { setStep(current => current + 1); setNotice(''); } else void onSave(campusProfileSchema.parse(profile)); }}>{onCancel ? t('save') : step === 3 ? t('finish') : t('next')}<ArrowRight size={15}/></button></div>
   </section>;
 }
