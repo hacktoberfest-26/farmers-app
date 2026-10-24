@@ -6,7 +6,7 @@ L.control.scale({imperial:false}).addTo(map);
 L.marker(CAMPUS,{icon:L.divIcon({className:'campus-pin',html:'↗ H-FARM Campus',iconAnchor:[70,20]})}).addTo(map).bindPopup('H-FARM Campus<br>Via Adriano Olivetti, 1<br><small>Approximate campus reference point</small>');
 let currentAccuracy=0;
 let watch=null, demoTimer=null, marker=null, ring=null, last=null, following=true, demo=false, installPrompt=null;
-function banner(message){$('banner').textContent=message;$('banner').hidden=!message;}
+function banner(message){parent.postMessage({type:'farmers-status',text:message?$('status').textContent+' '+message:''},location.origin);$('banner').textContent=message;$('banner').hidden=!message;}
 function clearTracking(){if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;clearInterval(demoTimer);demoTimer=null;}
 function clearPosition(){if(marker)map.removeLayer(marker);if(ring)map.removeLayer(ring);marker=ring=last=null;$('accuracy').innerHTML='— <i>m</i>';$('updated').textContent='—';}
 function stop(){parent.postMessage({type:"farmers-position",fix:null},location.origin);clearTracking();clearPosition();demo=false;$('mode').textContent='STOPPED';$('status').textContent='Location paused.';$('message').textContent='Your position has been cleared. Start again whenever you’re ready.';$('stop').hidden=true;$('locate').textContent='⌖  Use my location';banner('');}
@@ -32,6 +32,7 @@ let matchedPeople=[];
 let mapMarkers=[];
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==parent||!event.data)return;
+ if(event.data.type==='farmers-control'&&['locate','demo','stop'].includes(event.data.action))$(event.data.action).click();
  if(event.data.type==='farmers-people'&&Array.isArray(event.data.people)){
   matchedPeople=event.data.people.filter(p=>p.location&&Date.now()-p.location.updatedAt<120000);peopleLayer.clearLayers();mapMarkers=[];
   for(const person of matchedPeople){

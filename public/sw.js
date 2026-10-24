@@ -1,4 +1,4 @@
-const CACHE = 'farmers-campus-map-v3';
+const CACHE = 'farmers-mobile-shell-v4';
 const ROOT = new URL('./', self.location.href).pathname;
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll([ROOT, `${ROOT}manifest.webmanifest`, `${ROOT}icons/icon-192.png`, `${ROOT}vendor/sql-wasm.wasm`, `${ROOT}vendor/sql-wasm-browser.wasm`])).then(() => self.skipWaiting()));
