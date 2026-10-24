@@ -35,3 +35,9 @@ The original community snapshot and password accounts remain in the same SQLite 
 The PWA caches public static assets. It does not cache API responses or queue commands offline. Existing local sports demo data is separate from the new fictional campus demo. The new demo validates persisted browser data and makes no AI requests.
 
 The private shared-demo passcode enables twelve server-backed fictional identities and 24-hour sessions. Disabling it also gates retained demo members out of scheduled inference. University email delivery and exact domain allowlists are configurable but disabled in the deployed prototype. Interest categories, directory prefills, staff alerts, and resource availability in the demo are fictional or provisional. Live campus data sources, Web Push, private-idea analysis, and a production compliance review remain outside this implementation.
+
+### Campus map integration
+
+`CampusMap` hosts the adapted, bundled Campus Compass map in a same-origin frame. The frame owns Leaflet/GPS and sends validated position messages to its parent; it never receives bearer tokens. The React parent checks origin, source and schema, and only publishes after explicit sharing consent. Incoming matched positions are rendered with text nodes, not interpolated HTML. OpenStreetMap tiles are online-only.
+
+`campus_locations` stores one latest fix per member, with server timestamps. Reads reuse the existing revealed-proposal projection, so consent revocation and cohort separation apply to location as well as identity. Fixes are omitted after two minutes, deleted during map activity, and cascade on account deletion. Demo reset removes demo positions. Only fictional accounts may publish fixes marked simulated. Coordinates do not enter matching prompts. The map endpoints require a valid session and do not return unmatched member IDs.

@@ -60,3 +60,9 @@ export const campusSessionSchema = z.object({token:z.string().min(20),userId:z.s
 export function initialCampusProfile(name='Campus member'):CampusProfileInput {
   return {name,course:'',year:'',interests:['technology','design','community'],skills:[],lookingFor:['events'],sports:[],privateIdea:'',colour:colours[0],consent:{matching:false,hostedAi:false,events:false,resources:false}};
 }
+
+export const locationFixSchema = z.object({ latitude:z.number().min(-90).max(90), longitude:z.number().min(-180).max(180), accuracy:z.number().min(0).max(100000), simulated:z.boolean() });
+export const sharedLocationSchema = locationFixSchema.extend({ updatedAt:z.number() });
+export const campusMapSchema = z.object({ own:sharedLocationSchema.nullable(), people:z.array(z.object({ matchId:z.string(),name:z.string(),avatar:avatarSchema,location:sharedLocationSchema })) });
+export type LocationFix = z.infer<typeof locationFixSchema>;
+export type CampusMapState = z.infer<typeof campusMapSchema>;

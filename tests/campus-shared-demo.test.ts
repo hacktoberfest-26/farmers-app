@@ -6,7 +6,7 @@ import type { CampusAI } from '../server/src/backboard';
 let scored=0;
 const ai:CampusAI={model:'external-provider-test',score:async()=>{scored++;return{score:90,reasonCodes:['shared_interests','same_sport','shared_goal']};},normalise:async()=> 'technology',readPoster:async()=>({title:'Demo poster event',date:'2030-01-01T10:00:00.000Z',place:'Fictional hall',topics:['technology']})};
 const app=buildServer({sqlitePath:':memory:',corsOrigin:'https://farmers.test',bootstrapAdminEmail:'operator@example.test',bootstrapAdminPassword:'operator-only-strong-password',campus:{ai,sharedDemo:{code:'test-demo-code'},scheduler:false}});
-const request=(method:'GET'|'POST',url:string,body?:unknown,token?:string)=>app.inject({method,url,payload:body?JSON.stringify(body):undefined,headers:{'content-type':'application/json',...(token?{authorization:`Bearer ${token}`}:{})}});
+const request=(method:'GET'|'POST',url:string,body?:unknown,token?:string)=>app.inject({method,url,payload:body!==undefined?JSON.stringify(body):undefined,headers:{'content-type':'application/json',...(token?{authorization:`Bearer ${token}`}:{})}});
 const tokens:Record<string,string>={};
 afterAll(async()=>app.close());
 
@@ -42,6 +42,17 @@ it('uses the real inference boundary and shares consent decisions between two de
   await request('POST',`/api/campus/matches/${common.id}/answer`,{answer:'yes'},tokens.mia);
   const both=campusHomeSchema.parse((await request('GET','/api/campus',undefined,tokens.alex)).json());
   expect(both.suggestions.find(card=>card.id===common.id)).toMatchObject({kind:'revealed',person:{name:'Mia Verde'}});
+});
+
+it('shares map positions between authenticated matches and clears them on stop',async()=>{
+  expect((await request('GET','/api/campus/map')).statusCode).toBe(401);
+  const fix={latitude:45.5657,longitude:12.4379,accuracy:7,simulated:true};
+  expect((await request('POST','/api/campus/map/location',fix,tokens.mia)).statusCode).toBe(200);
+  const map=(await request('GET','/api/campus/map',undefined,tokens.alex)).json();
+  expect(map.people).toHaveLength(1);expect(map.people[0].name).toBe('Mia Verde');
+  expect((await request('GET','/api/campus/map',undefined,tokens.nina)).json().people).toEqual([]);
+  expect((await request('POST','/api/campus/map/location',null,tokens.mia)).statusCode).toBe(200);
+  expect((await request('GET','/api/campus/map',undefined,tokens.alex)).json().people).toEqual([]);
 });
 
 it('does not grant fictional people administrator access and revokes only the switching device session',async()=>{

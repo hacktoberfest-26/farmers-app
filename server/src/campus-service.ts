@@ -3,7 +3,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
 import { anonymousPair } from '../../packages/anonymiser';
 import {
-  campusEventSchema, campusHomeSchema, campusMemberSchema, campusProfileSchema, goalId,
+  locationFixSchema, sharedLocationSchema, type LocationFix, type CampusMapState, campusEventSchema, campusHomeSchema, campusMemberSchema, campusProfileSchema, goalId,
   initialCampusProfile, interestId, judgementSchema, skillId, sportId,
   type CampusEvent, type CampusHome, type CampusMember, type CampusProfileInput,
   type EngineReport, type MatchType, type MatchView,
@@ -44,6 +44,7 @@ export class CampusService {
         user_id TEXT PRIMARY KEY REFERENCES auth_users(id) ON DELETE CASCADE,
         document TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS campus_locations (user_id TEXT PRIMARY KEY REFERENCES campus_members(user_id) ON DELETE CASCADE, document TEXT NOT NULL, updated INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS campus_jobs (
         pair_key TEXT PRIMARY KEY, a TEXT NOT NULL REFERENCES campus_members(user_id) ON DELETE CASCADE,
         b TEXT NOT NULL REFERENCES campus_members(user_id) ON DELETE CASCADE,
@@ -134,6 +135,7 @@ export class CampusService {
       const member = this.requireMember(id);
       this.writeMember({ ...member, profile, complete: true, revision: member.revision + 1 });
       if (!profile.consent.matching || !profile.consent.hostedAi) {
+        this.db.prepare('DELETE FROM campus_locations WHERE user_id=?').run(id);
         this.db.prepare('UPDATE campus_proposals SET revoked=? WHERE (a=? OR b=?) AND revoked IS NULL')
           .run(this.now(), id, id);
       }
@@ -179,6 +181,30 @@ export class CampusService {
       agent: { configured: !!this.options.ai, model: this.options.ai?.model ?? 'Gemma 4 · Backboard',
         status: !this.options.ai ? 'not-configured' : lease.owner && lease.lease_until > this.now() ? 'running' : lease.error ? 'error' : 'ready',
         lastRun: lease.last_run === null ? null : new Date(lease.last_run).toISOString() } });
+  }
+
+  map(id:string):CampusMapState {
+    this.requireMember(id);
+    this.db.prepare('DELETE FROM campus_locations WHERE updated<=?').run(this.now()-120_000);
+    const read=(userId:string)=>{ const row=this.db.prepare('SELECT document FROM campus_locations WHERE user_id=?').get(userId); return row?sharedLocationSchema.parse(JSON.parse(documentRow.parse(row).document)):null; };
+    const people:CampusMapState['people']=[];
+    for(const match of this.home(id).suggestions){
+      if(match.kind!=='revealed')continue;
+      const row=proposalRow.parse(this.db.prepare('SELECT * FROM campus_proposals WHERE id=?').get(match.id));
+      const location=read(row.a===id?row.b:row.a);
+      if(location)people.push({matchId:match.id,name:match.person.name,avatar:match.avatar,location});
+    }
+    return {own:read(id),people};
+  }
+
+  shareLocation(id:string,fix:LocationFix|null):CampusMapState {
+    const member=this.requireMember(id);
+    if(fix===null){this.db.prepare('DELETE FROM campus_locations WHERE user_id=?').run(id);return this.map(id);}
+    const value=locationFixSchema.parse(fix);
+    if(!eligible(member))throw new CampusError(403,'Complete your profile and enable matching first');
+    if(value.simulated&&member.verification!=='demo')throw new CampusError(403,'Simulated locations are only available to fictional demo accounts');
+    this.db.prepare('INSERT INTO campus_locations(user_id,document,updated) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET document=excluded.document,updated=excluded.updated').run(id,JSON.stringify({...value,updatedAt:this.now()}),this.now());
+    return this.map(id);
   }
 
   answer(id: string, proposalId: string, answer: 'yes' | 'no'): CampusHome {
@@ -370,6 +396,7 @@ export class CampusService {
         this.db.prepare('DELETE FROM campus_proposals WHERE a=? OR b=?').run(id, id);
         this.db.prepare('DELETE FROM campus_jobs WHERE a=? OR b=?').run(id, id);
         this.db.prepare('DELETE FROM campus_deliveries WHERE user_id=?').run(id);
+        this.db.prepare('DELETE FROM campus_locations WHERE user_id=?').run(id);
       }
     });
     return this.home(actorId);

@@ -308,3 +308,30 @@ describe('private campus lifecycle', () => {
     expect((await service.runEngine()).published).toBe(1);
   });
 });
+
+describe('matched campus location sharing',()=>{
+ it('requires two yeses, hides unmatched positions, supports withdrawal and expiry',async()=>{
+  const {service,add,advance}=fixture();add('a');add('b');add('c');
+  await service.runEngine();
+  const match=service.home('a').suggestions.find(m=>service.home('b').suggestions.some(n=>n.id===m.id));
+  expect(match).toBeDefined();if(!match)throw new Error('Expected pair');
+  const fix={latitude:45.5657,longitude:12.4379,accuracy:9,simulated:false};
+  service.shareLocation('b',fix);
+  expect(service.map('a').people).toEqual([]);
+  service.answer('a',match.id,'yes');expect(service.map('a').people).toEqual([]);
+  service.answer('b',match.id,'yes');
+  expect(service.map('a').people).toHaveLength(1);
+  expect(service.map('a').people[0].location.latitude).toBe(fix.latitude);
+  expect(service.map('c').people).toEqual([]);
+  service.shareLocation('b',null);expect(service.map('a').people).toEqual([]);
+  service.shareLocation('b',fix);advance(120001);expect(service.map('a').people).toEqual([]);
+  service.shareLocation('b',fix);const member=service.member('b');if(!member)throw new Error('Expected member');const profile=member.profile;
+  service.saveProfile('b',{...profile,consent:{...profile.consent,matching:false}});
+  expect(service.map('a').people).toEqual([]);
+ });
+ it('rejects simulated fixes for real accounts and invalid coordinates',()=>{
+  const {service,add}=fixture();add('a');
+  expect(()=>service.shareLocation('a',{latitude:45,longitude:12,accuracy:5,simulated:true})).toThrow('Simulated');
+  expect(()=>service.shareLocation('a',{latitude:200,longitude:12,accuracy:5,simulated:false})).toThrow();
+ });
+});

@@ -1,11 +1,13 @@
 import { z } from 'zod';
-import { campusHomeSchema, campusProfileSchema, campusSessionSchema, engineReportSchema, interestId, type CampusHome, type CampusProfileInput, type EngineReport } from './campus-model';
+import { campusMapSchema, type LocationFix, type CampusMapState, campusHomeSchema, campusProfileSchema, campusSessionSchema, engineReportSchema, interestId, type CampusHome, type CampusProfileInput, type EngineReport } from './campus-model';
 import { sharedDemoAccounts } from './campus-demo-accounts';
 
 export type DemoAccount = { id: string; name: string };
 export interface CampusClient {
   readonly mode: 'live' | 'demo';
   home(): Promise<CampusHome>;
+  map():Promise<CampusMapState>;
+  shareLocation(fix:LocationFix|null):Promise<CampusMapState>;
   saveProfile(profile: CampusProfileInput): Promise<CampusHome>;
   answer(id: string, answer: 'yes' | 'no'): Promise<CampusHome>;
   requestCode(email: string): Promise<{ challengeId: string; expiresAt: string }>;
@@ -48,6 +50,8 @@ export class LiveCampusClient implements CampusClient {
     }
     return result;
   }
+  async map(){return campusMapSchema.parse(await this.request("/api/campus/map"));}
+  async shareLocation(fix:LocationFix|null){return campusMapSchema.parse(await this.request("/api/campus/map/location",fix));}
   async home() { const home = campusHomeSchema.parse(await this.request('/api/campus')); this.sharedDemo = home.demo; return home; }
   async saveProfile(profile: CampusProfileInput) { return campusHomeSchema.parse(await this.request('/api/campus/profile', campusProfileSchema.parse(profile))); }
   async answer(id: string, answer: 'yes' | 'no') { return campusHomeSchema.parse(await this.request(`/api/campus/matches/${encodeURIComponent(id)}/answer`, { answer })); }

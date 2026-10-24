@@ -20,6 +20,8 @@ function readDemo(): DemoState {
 }
 function dayKey(date: string): string { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(date)); }
 export class DemoCampusClient implements CampusClient {
+  async map(){return {own:null,people:[]};}
+  async shareLocation(){return this.map();}
   readonly mode = 'demo';
   private state: DemoState = readDemo();
   private save() { try { localStorage.setItem(storageKey, JSON.stringify(this.state)); } catch { /* Browser storage may be disabled. */ } }

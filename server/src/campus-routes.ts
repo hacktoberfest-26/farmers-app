@@ -1,7 +1,7 @@
 import { createHash, createHmac, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { campusProfileSchema } from '../../src/lib/campus-model';
+import { locationFixSchema, campusProfileSchema } from '../../src/lib/campus-model';
 import { CampusError, CampusService } from './campus-service';
 import type { CampusAI } from './backboard';
 import type { CommunityStore } from './store';
@@ -50,6 +50,8 @@ export function registerCampusRoutes(app:FastifyInstance,store:CommunityStore,au
     if(id)ensure(id);
     return campus.home(id);
   }));
+  app.get('/api/campus/map',guarded(request=>campus.map(actor(request))));
+  app.post('/api/campus/map/location',guarded(request=>campus.shareLocation(actor(request),locationFixSchema.nullable().parse(request.body))));
   app.post('/api/campus/profile',guarded(request=>campus.saveProfile(actor(request),campusProfileSchema.parse(request.body))));
   app.post('/api/campus/demo/sign-in',{config:{rateLimit:{max:15,timeWindow:'1 minute'}}},guarded(request=>{
     const {code,alias}=z.object({code:z.string().min(1).max(128),alias:z.string().max(30)}).parse(request.body);

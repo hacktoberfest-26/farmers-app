@@ -34,3 +34,13 @@ The server permits up to 100 demo scoring attempts per Europe/Rome day, independ
 `CAMPUS_DEMO_CODE` enables the shared demo and protects sign-in. Removing it disables shared access and prevents the scheduler from scoring retained demo members. `BACKBOARD_API_KEY`, `BACKBOARD_PROVIDER`, and `BACKBOARD_MODEL` are server-only. They must never appear in a frontend build or public URL.
 
 The operator retains the passcode and administrator credentials in ignored local environment files and the Droplet's private environment. University email-code sign-in stays disabled until SMTP and exact approved domains are configured.
+
+## Campus map
+
+The October design update uses the supplied Farmers logo, tractor avatars, red/ocean palette and illustrated campus artwork. The interactive map integrates Campus Compass from `hacktoberfest2026/campus-compass`, preserving real GPS accuracy, follow/zoom controls and the simulated walk. OpenStreetMap attribution remains visible. The supplied illustration appears on the home screen; geographic positions use the actual map tiles, since the illustration has no georeferenced bounds.
+
+After both fictional people accept their introduction, open **Map** on each device. Choose **Share with my matches**, then **Take a test walk** in the map controls. Both participants appear with labelled simulated positions. Select a person below the map to centre on them. For real GPS, choose **Use my location** and grant the browser permission yourself.
+
+Sharing starts off. Only current mutual matches can retrieve another person's location; staff have no extra access. Choose **Stop sharing with matches** to remove the shared fix. **Stop GPS / demo walk** also removes it while sharing is enabled. Updates are sent at most once every five seconds. Positions expire after two minutes without an update; leaving the map or closing the app stops tracking. GPS runs only while this page is open. Public fictional personas share account state, so use simulated positions for presentations.
+
+The local rules preview can demonstrate the map and simulated walk, but shared positions require the server-backed shared demo. Location is never sent to Gemma. No restaurant menus, guest whereabouts or sports occupancy are inferred from the example mockups.
