@@ -295,4 +295,16 @@ describe('private campus lifecycle', () => {
     expect(await disabled.runEngine('demo')).toMatchObject({ scanned: 0, scored: 0, published: 0 });
     expect(await disabled.runEngine()).toMatchObject({ scanned: 0, scored: 0, published: 0 });
   });
+
+  it('recovers an interrupted single-instance run on process startup without a ten-minute wait', async () => {
+    const { service, add, db }=fixture();
+    add('a');add('b');
+    const future=Date.parse('2030-01-01T00:00:00Z');
+    db.prepare('UPDATE campus_engine_lease SET owner=?,lease_until=? WHERE id=1').run('stopped-process',future);
+    db.prepare('INSERT INTO campus_jobs(pair_key,a,b,status,attempts,lease_until,owner) VALUES(?,?,?,?,?,?,?)')
+      .run(JSON.stringify(['a','b','cofounder']),'a','b','running',1,future,'stopped-process');
+    expect((await service.runEngine()).status).toBe('busy');
+    service.recoverInterruptedRun();
+    expect((await service.runEngine()).published).toBe(1);
+  });
 });

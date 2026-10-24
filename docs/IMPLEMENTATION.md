@@ -14,7 +14,7 @@ The refined specification replaces the sports-directory homepage with a proactiv
 - [x] Implement passcode-protected shared fictional accounts, real server inference, independent device sessions and three-second synchronization.
 - [x] Implement demo/live cohort isolation, staff event isolation and operator-only demo reset with in-flight generation fencing.
 - [x] Check local browser onboarding, first-yes anonymity, two-yes reveal and mobile layout at 390px.
-- [x] Deploy the shared presentation API and Pages PWA; GitHub Actions build and deployment succeeded with 59 tests.
+- [x] Deploy the shared presentation API and Pages PWA; GitHub Actions build and deployment succeeded with 60 tests.
 - [x] Verify actual shared Gemma proposals with two independent deployed API sessions: first yes stays private and second yes reveals identity in both sessions. Reset only fictional votes and request fresh anonymous cards afterward.
 - Final visual check of the newly deployed shared sign-in could not complete because Chrome control stopped responding. The earlier local desktop/mobile walkthrough and deployed API checks passed.
 

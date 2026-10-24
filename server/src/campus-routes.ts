@@ -7,7 +7,7 @@ import type { CampusAI } from './backboard';
 import type { CommunityStore } from './store';
 import { seedSharedDemo, sharedDemoAccount } from './campus-shared-demo';
 
-export type CampusOptions = { ai:CampusAI|null; email?:{domains:string[];secret:string;sendCode:(email:string,code:string)=>Promise<void>}; sharedDemo?:{code:string}; scheduler?:boolean };
+export type CampusOptions = { ai:CampusAI|null; email?:{domains:string[];secret:string;sendCode:(email:string,code:string)=>Promise<void>}; sharedDemo?:{code:string}; scheduler?:boolean; recoverOnStart?:boolean };
 const emailInput=z.object({email:z.email().transform(value=>value.trim().toLowerCase())});
 const challengeRow=z.object({id:z.string(),email:z.string(),code_hash:z.string(),expires:z.number(),attempts:z.number(),consumed:z.number().nullable()});
 const errorResponse={error:'Enter valid details and try again'};
@@ -15,6 +15,7 @@ export function registerCampusRoutes(app:FastifyInstance,store:CommunityStore,au
   const db=store.db;
   const email=options.email;
   const campus=new CampusService(db,{ai:options.ai,auth:{emailEnabled:!!email,domains:email?.domains??[],sharedDemo:!!options.sharedDemo}});
+  if(options.recoverOnStart)campus.recoverInterruptedRun();
   if(options.sharedDemo)seedSharedDemo(store,campus);
   db.exec(`CREATE TABLE IF NOT EXISTS campus_otp(id TEXT PRIMARY KEY,email TEXT NOT NULL,code_hash TEXT NOT NULL,expires INTEGER NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,consumed INTEGER,created INTEGER NOT NULL);
     CREATE INDEX IF NOT EXISTS campus_otp_email ON campus_otp(email,created);

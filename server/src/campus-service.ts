@@ -86,6 +86,14 @@ export class CampusService {
     catch (error) { this.db.exec('ROLLBACK'); throw error; }
   }
 
+  /** Only the single deployed process calls this before it starts accepting traffic. */
+  recoverInterruptedRun():void {
+    this.transaction(()=>{
+      this.db.prepare('UPDATE campus_engine_lease SET owner=NULL,lease_until=0 WHERE id=1').run();
+      this.db.prepare("UPDATE campus_jobs SET status='failed',lease_until=0 WHERE status='running'").run();
+    });
+  }
+
   member(id: string): CampusMember | null {
     const row = this.db.prepare('SELECT document FROM campus_members WHERE user_id=?').get(id);
     return row ? campusMemberSchema.parse(JSON.parse(documentRow.parse(row).document)) : null;
