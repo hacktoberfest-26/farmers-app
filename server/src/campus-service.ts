@@ -1,3 +1,4 @@
+import { refreshDemoEvents } from './campus-demo-events';
 import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { z } from 'zod';
@@ -178,9 +179,10 @@ export class CampusService {
     }
     const lease = leaseRow.parse(this.db.prepare('SELECT owner,lease_until,last_run,error FROM campus_engine_lease WHERE id=1').get());
     const demo = me?.verification === 'demo';
+    if(demo && this.options.auth.sharedDemo)refreshDemoEvents(this.db,this.now());
     const events = me?.complete && me.profile.consent.events && (!demo || this.options.auth.sharedDemo === true)
       ? this.db.prepare('SELECT document FROM campus_events').all().map(row => campusEventSchema.parse(JSON.parse(documentRow.parse(row).document)))
-        .filter(event => (event.source === 'demo') === demo && Date.parse(event.date) > this.now() && overlaps(event.topics, me.profile.interests)).slice(0, 20) : [];
+        .filter(event => (event.source === 'demo') === demo && Date.parse(event.date) > this.now() && overlaps(event.topics, me.profile.interests)).sort((a,b)=>Date.parse(a.date)-Date.parse(b.date)).slice(0, 20) : [];
     const alerts = demo && this.options.auth.sharedDemo === true && me && ['staff', 'admin'].includes(me.role)
       ? [{ id: 'fictional-guest', title: 'Fictional demo · campus guest', body: 'A fictional sustainability founder is visiting. Two demo teams share that interest. This alert contains no real campus data.', status: 'open' }] : [];
     return campusHomeSchema.parse({ me, suggestions, events, alerts, demo, auth: this.options.auth,

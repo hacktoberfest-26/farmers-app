@@ -1,3 +1,4 @@
+import { refreshDemoEvents } from './campus-demo-events';
 import { colours, initialCampusProfile } from '../../src/lib/campus-model';
 import { sharedDemoAccounts } from '../../src/lib/campus-demo-accounts';
 import { CampusError, type CampusService } from './campus-service';
@@ -24,10 +25,5 @@ export function seedSharedDemo(store:CommunityStore,campus:CampusService) {
       sports:[{sport:index%2?'padel':'tennis',level:'beginner',days:[1,3],slots:['afternoon']}],
     });
   });
-  store.db.exec(`CREATE TABLE IF NOT EXISTS campus_demo_seed(key TEXT PRIMARY KEY);`);
-  if(!store.db.prepare("SELECT 1 FROM campus_demo_seed WHERE key='events-v1'").get()) {
-    store.db.prepare('INSERT INTO campus_events(id,document) VALUES(?,?)').run('shared-demo-coffee',JSON.stringify({id:'shared-demo-coffee',title:'Ideas over coffee · fictional',date:new Date(Date.now()+2*86400000).toISOString(),place:'Campus café · fictional',topics:['business','community','design'],source:'demo'}));
-    store.db.prepare("INSERT INTO campus_demo_seed(key) VALUES('events-v1')").run();
-  }
+  refreshDemoEvents(store.db);
 }
-

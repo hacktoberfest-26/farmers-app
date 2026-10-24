@@ -228,7 +228,8 @@ describe('private campus lifecycle', () => {
     service.addEvent('operator', event);
     service.addEvent('demo-staff', { ...event, id: 'demo-event', title: 'Fictional demo talk', source: 'poster' });
     expect(service.home('live-student').events.map(value => value.id)).toEqual(['live-event']);
-    expect(service.home('demo-student').events.map(value => value.id)).toEqual(['demo-event']);
+    expect(service.home('demo-student').events.map(value => value.id)).toContain('demo-event');
+    expect(service.home('demo-student').events.every(value => value.source === 'demo')).toBe(true);
     expect(service.home('demo-student').events[0]?.source).toBe('demo');
     expect(service.home('demo-staff').alerts[0]?.title).toContain('Fictional demo');
     expect(service.home('operator').alerts).toEqual([]);
